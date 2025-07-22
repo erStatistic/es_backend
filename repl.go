@@ -11,6 +11,8 @@ import (
 
 type config struct {
 	esapiClient erapi.Client
+	currentUser *erapi.User
+	users       []erapi.User
 }
 
 func startRepl(cfg *config, args ...string) {
@@ -65,6 +67,21 @@ func getCommands() map[string]command {
 			name:        "metatype",
 			descrpition: "Displays metatype information",
 			callback:    commandMetatype,
+		},
+		"currentuser": {
+			name:        "currentuser",
+			descrpition: "Displays current user information",
+			callback:    commandCurrentUser,
+		},
+		"user": {
+			name:        "user",
+			descrpition: "search usernum by nickname",
+			callback:    commandUser,
+		},
+		"userlist": {
+			name:        "userlist",
+			descrpition: "Displays users information before I found out",
+			callback:    commandUserList,
 		},
 		"exit": {
 			name:        "exit",

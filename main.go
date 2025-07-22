@@ -16,6 +16,8 @@ func main() {
 	esClient := erapi.NewClient(time.Second*10, apiKey)
 	cfg := &config{
 		esapiClient: esClient,
+		currentUser: nil,
+		users:       []erapi.User{},
 	}
 
 	startRepl(cfg)

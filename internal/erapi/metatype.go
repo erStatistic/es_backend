@@ -12,8 +12,6 @@ func (c *Client) MetaTypes(metaType string) (string, error) {
 	url := baseURLv2 + "/data/" + metaType
 	if metaType == "" {
 		url = baseURLv2 + "/data/hash"
-
-		// TODO: create metatype data and if it already exists, print it to know the details of the metatype
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
