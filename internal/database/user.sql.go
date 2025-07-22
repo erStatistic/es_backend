@@ -17,7 +17,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3)
 RETURNING
-    id, user_num, name
+	id, user_num, name
 `
 
 type CreateUserParams struct {
