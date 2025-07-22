@@ -13,6 +13,7 @@ type config struct {
 	esapiClient erapi.Client
 	currentUser *erapi.User
 	users       []erapi.User
+	nextgame    *int
 }
 
 func startRepl(cfg *config, args ...string) {
@@ -25,6 +26,7 @@ func startRepl(cfg *config, args ...string) {
 			continue
 		}
 		commandName := words[0]
+		commandName = strings.ToLower(commandName)
 
 		args := []string{}
 		if len(words) > 1 {
@@ -45,8 +47,7 @@ func startRepl(cfg *config, args ...string) {
 }
 
 func cleanInput(text string) []string {
-	output := strings.ToLower(text)
-	words := strings.Fields(output)
+	words := strings.Fields(text)
 	return words
 }
 
@@ -82,6 +83,11 @@ func getCommands() map[string]command {
 			name:        "userlist",
 			descrpition: "Displays users information before I found out",
 			callback:    commandUserList,
+		},
+		"usergame": {
+			name:        "usergame",
+			descrpition: "search user game list",
+			callback:    commandUserGame,
 		},
 		"exit": {
 			name:        "exit",

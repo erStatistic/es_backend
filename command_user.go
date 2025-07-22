@@ -19,8 +19,18 @@ func commandUser(cfg *config, args ...string) error {
 		return fmt.Errorf("user not found")
 	}
 
-	cfg.users = append(cfg.users, *user)
-	cfg.currentUser = user
+	exists := false
+	for _, u := range cfg.users {
+		if u.UserNum == user.UserNum {
+			exists = true
+			break
+		}
+	}
+
+	if !exists {
+		cfg.users = append(cfg.users, *user)
+		cfg.currentUser = user
+	}
 
 	fmt.Printf("Nickname: %s\n", user.Nickname)
 	fmt.Printf("Usernum: %d\n", user.UserNum)
