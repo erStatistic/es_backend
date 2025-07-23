@@ -27,11 +27,6 @@ func (c *Client) MetaTypes(metaType string) (string, error) {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		fmt.Println(res.StatusCode)
-		return "", err
-	}
-
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
@@ -41,6 +36,10 @@ func (c *Client) MetaTypes(metaType string) (string, error) {
 
 	err = json.Unmarshal(body, &result)
 	if err != nil {
+		return "", err
+	}
+	if result.Code != http.StatusOK {
+		fmt.Println(result.Message)
 		return "", err
 	}
 
