@@ -64,6 +64,11 @@ func getCommands() map[string]command {
 			descrpition: "Displays this help message",
 			callback:    commandHelp,
 		},
+		"config": {
+			name:        "config",
+			descrpition: "Displays config information",
+			callback:    commandConfig,
+		},
 		"metatype": {
 			name:        "metatype",
 			descrpition: "Displays metatype information",
@@ -88,6 +93,11 @@ func getCommands() map[string]command {
 			name:        "usergame",
 			descrpition: "search user game list",
 			callback:    commandUserGame,
+		},
+		"gamedetail": {
+			name:        "gamedetail",
+			descrpition: "Displays game information about all of the users in the game",
+			callback:    commandGameDetail,
 		},
 		"exit": {
 			name:        "exit",

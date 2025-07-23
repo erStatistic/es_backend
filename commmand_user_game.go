@@ -6,49 +6,45 @@ import (
 
 func commandUserGame(cfg *config, args ...string) error {
 
-	userNum := 0
-	nextFlag := false
-
-	if len(args) == 0 {
-		userNum = cfg.currentUser.UserNum
-	} else if len(args) > 2 {
-		return fmt.Errorf("usage : userGame [nickname] [--next / --n]")
-	} else {
-		nickname := args[0]
-		user, err := cfg.esapiClient.UserByNickname(nickname)
-		if err != nil {
-			return err
-		}
-		if user == nil {
-			return fmt.Errorf("user not found")
-		}
-
-	}
+	var userNum int
+	var nextFlag bool
 
 	for _, arg := range args {
 		if arg == "--next" || arg == "--n" {
 			nextFlag = true
+			continue
+		}
+		if arg != "" {
+			user, err := cfg.esapiClient.UserByNickname(arg)
+			if err != nil {
+				return err
+			}
+			userNum = user.UserNum
+			break
 		}
 	}
+	if userNum == 0 {
+		userNum = cfg.currentUser.UserNum
+	}
 
+	// Validate argument count
+	if len(args) > 2 {
+		return fmt.Errorf("usage: userGame [nickname] [--next / --n]")
+	}
+
+	var nextgame *int
 	if nextFlag {
-		usergames, next, err := cfg.esapiClient.GameByUserNum(userNum, cfg.nextgame)
-		if err != nil {
-			return err
-		}
-		for _, game := range usergames {
-			fmt.Printf("GameID: %d\n", game.GameID)
-		}
-		cfg.nextgame = next
-	} else {
-		usergames, next, err := cfg.esapiClient.GameByUserNum(userNum, nil)
-		if err != nil {
-			return err
-		}
-		for _, game := range usergames {
-			fmt.Printf("GameID: %d\n", game.GameID)
-		}
-		cfg.nextgame = next
+		nextgame = cfg.nextgame
+	}
+
+	usergames, nxt, err := cfg.esapiClient.GameByUserNum(userNum, nextgame)
+	if err != nil {
+		return err
+	}
+	cfg.nextgame = nxt
+
+	for _, game := range usergames {
+		fmt.Printf("GameID: %d\n", game.GameID)
 	}
 
 	fmt.Printf("nextGameID: %d\n", *cfg.nextgame)
