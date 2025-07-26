@@ -17,7 +17,8 @@ func commandGameDetail(cfg *config, args ...string) error {
 	}
 
 	for i, game := range games {
-		fmt.Printf("%d | Nickname: %s, UserNum: %d\n", i+1, game.Nickname, game.UserNum)
+		fmt.Printf("%02d | Nickname: %s, UserNum: %d\n", i+1, game.Nickname, game.UserNum)
+		fmt.Printf("   | Totaltime: %d\n", game.TotalTime)
 	}
 	return nil
 }

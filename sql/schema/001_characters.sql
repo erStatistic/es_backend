@@ -1,9 +1,11 @@
 -- +goose Up
-CREATE TABLE users (
+CREATE TABLE characters (
     id UUID PRIMARY KEY,
-    user_num INT NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL
+    characater_id INT NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    thumbnail VARCHAR(255) NOT NULL,
+    skill_group INT NOT NULL
 );
 
 -- +goose Down
-DROP TABLE users;
+DROP TABLE characters;
