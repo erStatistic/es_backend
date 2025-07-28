@@ -1,10 +1,11 @@
 -- +goose Up
 CREATE TABLE characters (
-    id UUID PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     characater_id INT NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL UNIQUE,
-    thumbnail VARCHAR(255) NOT NULL,
-    skill_group INT NOT NULL
+    skill_group INT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- +goose Down

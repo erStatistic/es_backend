@@ -74,6 +74,16 @@ func getCommands() map[string]command {
 			descrpition: "Displays metatype information",
 			callback:    commandMetatype,
 		},
+		"characterinfo": {
+			name:        "characterinfo",
+			descrpition: "Displays character information",
+			callback:    commandCharacterInfo,
+		},
+		"weaponinfo": {
+			name:        "weaponinfo",
+			descrpition: "Displays weapon information",
+			callback:    commandWeaponInfo,
+		},
 		"currentuser": {
 			name:        "currentuser",
 			descrpition: "Displays current user information",
