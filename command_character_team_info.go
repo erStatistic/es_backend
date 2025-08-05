@@ -6,15 +6,10 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/kaeba0616/es_backend/internal/erapi"
 )
-
-// const (
-// 	maxConcurrency = 40
-// 	maxIterations  = 3
-// 	maxGames       = 10000
-// )
 
 func commandCharacterTeamInfo(cfg *config, args ...string) error {
 
@@ -33,14 +28,31 @@ func commandCharacterTeamInfo(cfg *config, args ...string) error {
 		return err
 	}
 	fmt.Println("End character team info")
-	allofteams := map[int][]TeamInfo{}
+
+	var (
+		allofteams = map[int][]TeamInfo{}
+		mu         sync.Mutex
+		wg         sync.WaitGroup
+		sem        = make(chan struct{}, 20)
+	)
 
 	for _, gameID := range gameIDs {
-		teams := getTeamInfo(cfg, gameID)
-		for gameRank := range teams {
-			allofteams[gameRank] = append(allofteams[gameRank], teams[gameRank])
-		}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(gid int) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			teams := getTeamInfo(cfg, gid)
+			mu.Lock()
+			for gameRank := range teams {
+				allofteams[gameRank] = append(allofteams[gameRank], teams[gameRank])
+			}
+			mu.Unlock()
+
+		}(gameID)
 	}
+	wg.Wait()
+
 	if err := saveTeamInfoToCSV("./internal/output/data/team_info.csv", allofteams); err != nil {
 		return fmt.Errorf("failed to save team info to CSV: %w", err)
 	}
@@ -61,6 +73,7 @@ func commandCharacterTeamInfo(cfg *config, args ...string) error {
 type TeamInfo struct {
 	GameID         int
 	CharacterNums  []int
+	weaponNums     []int
 	TeamKills      int
 	MonsterCredits int
 }
@@ -83,6 +96,7 @@ func getTeamInfo(cfg *config, gameID int) map[int]TeamInfo {
 
 		team.GameID = game.GameID
 		team.CharacterNums = append(team.CharacterNums, charNum)
+		team.weaponNums = append(team.weaponNums, game.BestWeapon)
 		team.TeamKills = kills
 		team.MonsterCredits += credits
 		teams[rank] = team
@@ -117,7 +131,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"GameRank", "GameID", "CharacterNums", "TeamKills", "MonsterCredits"}
+	header := []string{"GameRank", "GameID", "CharacterNums", "WeaponNums", "TeamKills", "MonsterCredits"}
 	if err := writer.Write(header); err != nil {
 		return err
 	}
@@ -132,10 +146,12 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 		teams := allofteams[rank]
 		for _, team := range teams {
 			charNumsStr := fmt.Sprintf("%v", team.CharacterNums)
+			weaponNumsStr := fmt.Sprintf("%v", team.weaponNums)
 			record := []string{
 				fmt.Sprintf("%d", rank),
 				fmt.Sprintf("%d", team.GameID),
 				charNumsStr,
+				weaponNumsStr,
 				fmt.Sprintf("%d", team.TeamKills),
 				fmt.Sprintf("%d", team.MonsterCredits),
 			}

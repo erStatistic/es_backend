@@ -312,6 +312,7 @@ type UserGame struct {
 	CrUseRootkit                            int              `json:"crUseRootkit"`
 	MmrGainInGame                           int              `json:"mmrGainInGame"`
 	MmrLossEntryCost                        int              `json:"mmrLossEntryCost"`
+	MmrAvg                                  int              `json:"mmrAvg"`
 	PremadeMatchingType                     int              `json:"premadeMatchingType"`
 	ViewContribution                        int              `json:"viewContribution"`
 	UseReconDrone                           int              `json:"useReconDrone"`

@@ -28,7 +28,7 @@ func (c *Client) GetCharacterTeamInfo(userID []int) ([]int, []int, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		if rank.Mmr >= 5000 {
+		if rank.Mmr >= 6400 {
 			filtereduserIDList = append(filtereduserIDList, userID)
 		}
 
@@ -98,24 +98,37 @@ func (c *Client) processUserIDs(initialUserIDs []int) ([]int, []int) {
 				recentGameIDs := filterRecentGames(games)
 
 				for _, gameID := range recentGameIDs {
+
 					gameData, err := c.GameByGameID(gameID)
 					if err != nil {
 						fmt.Printf("GameByGameID Error: %v\n", err)
 						continue
 					}
+
+					ok := true
 					for _, g := range gameData {
+						if g.MmrAvg < 6000 {
+							ok = false
+							break
+						}
+					}
+
+					if ok {
 						mutex.Lock()
-						if processedGames[g.GameID] || len(processedGames) >= maxGames {
+						if processedGames[gameID] || len(processedGames) >= maxGames {
 							mutex.Unlock()
 							continue
 						}
-						processedGames[g.GameID] = true
-						gameIDList = append(gameIDList, g.GameID)
+						processedGames[gameID] = true
+						gameIDList = append(gameIDList, gameID)
 
-						if !processedUsers[g.UserNum] && len(processedUsers) < maxUsers {
-							nextQueue = append(nextQueue, g.UserNum)
+						for _, g := range gameData {
+							if !processedUsers[g.UserNum] && len(processedUsers) < maxUsers {
+								nextQueue = append(nextQueue, g.UserNum)
+							}
 						}
 						mutex.Unlock()
+
 					}
 				}
 			}(uid)
