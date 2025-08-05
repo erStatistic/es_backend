@@ -13,8 +13,14 @@ type GameResponse struct {
 	Next      int        `json:"next"`
 }
 
-type RankResponse struct {
+type TopRankResponse struct {
 	Code     int        `json:"code"`
 	Message  string     `json:"message"`
 	TopRanks []UserRank `json:"topRanks"`
+}
+
+type RankResponse struct {
+	Code     int      `json:"code"`
+	Message  string   `json:"message"`
+	UserRank UserRank `json:"topRanks"`
 }

@@ -8,7 +8,7 @@ func commandTopRankUserInfo(cfg *config, args ...string) error {
 	seasonId := 33
 	serverCode := 10
 
-	ranks, err := cfg.esapiClient.RankUserInfo(teamMode, seasonId, serverCode)
+	ranks, err := cfg.esapiClient.TopRankUserInfo(teamMode, seasonId, serverCode)
 	if err != nil {
 		return err
 	}

@@ -115,6 +115,11 @@ func getCommands() map[string]command {
 			descrpition: "Displays top rank user information",
 			callback:    commandTopRankUserInfo,
 		},
+		"userrankinfo": {
+			name:        "userrankinfo",
+			descrpition: "Displays user rank information",
+			callback:    commandUserRankInfo,
+		},
 		"characterteaminfo": {
 			name:        "characterteaminfo",
 			descrpition: "Displays character team information",

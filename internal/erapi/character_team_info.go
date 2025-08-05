@@ -79,7 +79,7 @@ func (c *Client) processUserIDs(initialUserIDs []int) ([]int, []int) {
 			go func(userID int) {
 				defer wg.Done()
 				defer func() { <-semaphore }()
-				games, err := c.ManyGames(userID, 5)
+				games, err := c.ManyGames(userID, 3)
 				if err != nil {
 					fmt.Printf("GameByUserNum Error: %v\n", err)
 					return
