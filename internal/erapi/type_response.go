@@ -22,5 +22,5 @@ type TopRankResponse struct {
 type RankResponse struct {
 	Code     int      `json:"code"`
 	Message  string   `json:"message"`
-	UserRank UserRank `json:"topRanks"`
+	UserRank UserRank `json:"userRank"`
 }

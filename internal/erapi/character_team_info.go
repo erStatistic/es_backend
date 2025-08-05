@@ -22,8 +22,19 @@ const (
 func (c *Client) GetCharacterTeamInfo(userID []int) ([]int, []int, error) {
 
 	userIDList, gameIDList := c.processUserIDs(userID)
+	filtereduserIDList := []int{}
+	for _, userID := range userIDList {
+		rank, err := c.RankUserInfo(userID, 3, 33)
+		if err != nil {
+			return nil, nil, err
+		}
+		if rank.Mmr >= 5000 {
+			filtereduserIDList = append(filtereduserIDList, userID)
+		}
 
-	return userIDList, gameIDList, nil
+	}
+
+	return filtereduserIDList, gameIDList, nil
 }
 
 func filterRecentGames(games []UserGame) []int {
