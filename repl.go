@@ -13,6 +13,7 @@ type config struct {
 	esapiClient erapi.Client
 	currentUser *erapi.User
 	users       []erapi.User
+	rankers     []erapi.User
 	nextgame    *int
 }
 
@@ -108,6 +109,16 @@ func getCommands() map[string]command {
 			name:        "gamedetail",
 			descrpition: "Displays game information about all of the users in the game",
 			callback:    commandGameDetail,
+		},
+		"toprankuserinfo": {
+			name:        "toprankuserinfo",
+			descrpition: "Displays top rank user information",
+			callback:    commandTopRankUserInfo,
+		},
+		"characterteaminfo": {
+			name:        "characterteaminfo",
+			descrpition: "Displays character team information",
+			callback:    commandCharacterTeamInfo,
 		},
 		"exit": {
 			name:        "exit",

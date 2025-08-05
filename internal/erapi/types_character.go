@@ -1,6 +1,6 @@
 package erapi
 
-type Characters []struct {
+type Character struct {
 	AdaptiveForce                    int     `json:"adaptiveForce"`
 	AttackPower                      int     `json:"attackPower"`
 	AttackSpeed                      float64 `json:"attackSpeed"`

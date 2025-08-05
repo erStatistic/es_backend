@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func (c *Client) GetCharacterInfo() (Characters, error) {
+func (c *Client) GetCharacterInfo() ([]Character, error) {
 	fileurl := "./internal/output/metatype/data_Character.json"
 
 	data, err := os.ReadFile(fileurl)
@@ -13,7 +13,7 @@ func (c *Client) GetCharacterInfo() (Characters, error) {
 		return nil, err
 	}
 
-	var characters Characters
+	characters := []Character{}
 
 	err = json.Unmarshal(data, &characters)
 	if err != nil {

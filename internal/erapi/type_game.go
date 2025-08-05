@@ -1,12 +1,5 @@
 package erapi
 
-type GameResponse struct {
-	Code      int        `json:"code"`
-	Message   string     `json:"message"`
-	UserGames []UserGame `json:"userGames"`
-	Next      int        `json:"next"`
-}
-
 type TotalGame struct {
 	UserGames []UserGame `json:"userGames"`
 }

@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func (c *Client) GameByGameID(gameID string) ([]UserGame, error) {
+func (c *Client) GameByGameID(gameID int) ([]UserGame, error) {
 
-	url := baseURLv1 + "/games/" + gameID
+	url := fmt.Sprintf("%s/games/%d", baseURLv1, gameID)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

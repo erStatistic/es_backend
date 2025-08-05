@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 func commandGameDetail(cfg *config, args ...string) error {
@@ -10,7 +11,9 @@ func commandGameDetail(cfg *config, args ...string) error {
 		return errors.New("usage : gamedetail [gameid]")
 	}
 
-	gameID := args[0]
+	arg1 := args[0]
+
+	gameID, err := strconv.Atoi(arg1)
 	games, err := cfg.esapiClient.GameByGameID(gameID)
 	if err != nil {
 		return err

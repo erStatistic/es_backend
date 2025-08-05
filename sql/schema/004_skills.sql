@@ -1,11 +1,11 @@
 -- +goose Up
-CREATE TABLE characters (
+CREATE TABLE skills (
     id SERIAL PRIMARY KEY,
-    characater_id INT NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL UNIQUE,
+    skill_group INT NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- +goose Down
-DROP TABLE characters;
+DROP TABLE skills;

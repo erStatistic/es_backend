@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Client) UserByNickname(nickname string) (*User, error) {
-	url := baseURLv1 + "/user/nickname"
+	url := fmt.Sprintf("%s/user/nickname", baseURLv1)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

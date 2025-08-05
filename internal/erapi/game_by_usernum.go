@@ -9,7 +9,7 @@ import (
 )
 
 func (c *Client) GameByUserNum(usernum int, page *int) ([]UserGame, *int, error) {
-	url := baseURLv1 + "/user/games/" + strconv.Itoa(usernum)
+	url := fmt.Sprintf("%s/user/games/%d", baseURLv1, usernum)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

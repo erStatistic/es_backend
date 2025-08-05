@@ -18,6 +18,7 @@ func main() {
 		esapiClient: esClient,
 		currentUser: nil,
 		users:       []erapi.User{},
+		rankers:     []erapi.User{},
 	}
 
 	startRepl(cfg)
