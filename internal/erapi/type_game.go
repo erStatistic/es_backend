@@ -1,8 +1,8 @@
 package erapi
 
-type TotalGame struct {
-	UserGames []UserGame `json:"userGames"`
-}
+// type TotalGame struct {
+// 	UserGames []UserGame `json:"userGames"`
+// }
 
 type UserGame struct {
 	UserNum          int            `json:"userNum"`
@@ -200,6 +200,7 @@ type UserGame struct {
 		KillMutantChicken                   float64 `json:"KillMutantChicken"`
 		KillBear                            float64 `json:"KillBear"`
 		KillRaven                           float64 `json:"KillRaven"`
+		KillMutantRaven                     float64 `json:"KillMutantRaven"`
 		KillMutantBoar                      float64 `json:"KillMutantBoar"`
 		KillAssistDivideContribute          float64 `json:"KillAssistDivideContribute"`
 		KillMutantWolf                      float64 `json:"KillMutantWolf"`
