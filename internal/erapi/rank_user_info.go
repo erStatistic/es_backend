@@ -23,6 +23,10 @@ func (c *Client) RankUserInfo(userID, teamMode, seasonId int) (UserRank, error) 
 		return UserRank{}, err
 	}
 
+	if res.StatusCode != 200 {
+		return UserRank{}, fmt.Errorf("HTTP failed to get RankUserInfo: %d", res.StatusCode)
+	}
+
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -36,7 +40,7 @@ func (c *Client) RankUserInfo(userID, teamMode, seasonId int) (UserRank, error) 
 	}
 
 	if RankResponse.Code != 200 {
-		fmt.Printf("StatusCode : %d\n", RankResponse.Code)
+		fmt.Printf("RankUserInfo StatusCode : %d\n", RankResponse.Code)
 		return UserRank{}, errors.New("failed to get rank")
 	}
 

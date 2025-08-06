@@ -23,6 +23,10 @@ func (c *Client) GameByGameID(gameID int) ([]UserGame, error) {
 		return nil, err
 	}
 
+	if res.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP failed to get game by game ID: %d", res.StatusCode)
+	}
+
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
@@ -42,7 +46,7 @@ func (c *Client) GameByGameID(gameID int) ([]UserGame, error) {
 	}
 
 	if result.Code != 200 {
-		fmt.Printf("StatusCode : %d\n", result.Code)
+		fmt.Printf("GameByGameID StatusCode : %d\n", result.Code)
 		return nil, err
 	}
 	return result.UserGames, nil

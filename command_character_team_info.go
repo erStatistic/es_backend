@@ -33,7 +33,7 @@ func commandCharacterTeamInfo(cfg *config, args ...string) error {
 		allofteams = map[int][]TeamInfo{}
 		mu         sync.Mutex
 		wg         sync.WaitGroup
-		sem        = make(chan struct{}, 20)
+		sem        = make(chan struct{}, 5)
 	)
 
 	for _, gameID := range gameIDs {
@@ -76,6 +76,8 @@ type TeamInfo struct {
 	weaponNums     []int
 	TeamKills      int
 	MonsterCredits int
+	TotalTime      int
+	mmrGainInGame  int
 }
 
 func getTeamInfo(cfg *config, gameID int) map[int]TeamInfo {
@@ -99,11 +101,9 @@ func getTeamInfo(cfg *config, gameID int) map[int]TeamInfo {
 		team.weaponNums = append(team.weaponNums, game.BestWeapon)
 		team.TeamKills = kills
 		team.MonsterCredits += credits
+		team.TotalTime = game.TotalTime
+		team.mmrGainInGame = game.MmrGainInGame
 		teams[rank] = team
-	}
-
-	for _, team := range teams {
-		sort.Ints(team.CharacterNums)
 	}
 
 	return teams
@@ -154,6 +154,8 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 				weaponNumsStr,
 				fmt.Sprintf("%d", team.TeamKills),
 				fmt.Sprintf("%d", team.MonsterCredits),
+				fmt.Sprintf("%d", team.TotalTime),
+				fmt.Sprintf("%d", team.mmrGainInGame),
 			}
 			if err := writer.Write(record); err != nil {
 				return err

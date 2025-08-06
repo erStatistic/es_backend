@@ -21,6 +21,10 @@ func (c *Client) TopRankUserInfo(teamMode, seasonId, serverCode int) ([]User, er
 		return nil, err
 	}
 
+	if res.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP failed to get Top Rank User Info: %d", res.StatusCode)
+	}
+
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -34,7 +38,7 @@ func (c *Client) TopRankUserInfo(teamMode, seasonId, serverCode int) ([]User, er
 	}
 
 	if RankResponse.Code != 200 {
-		fmt.Printf("StatusCode : %d\n", RankResponse.Code)
+		fmt.Printf("Top Rank StatusCode : %d\n", RankResponse.Code)
 		return nil, err
 	}
 

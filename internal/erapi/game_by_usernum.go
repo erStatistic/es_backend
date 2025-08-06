@@ -28,6 +28,9 @@ func (c *Client) GameByUserNum(usernum int, page *int) ([]UserGame, *int, error)
 	if err != nil {
 		return nil, nil, err
 	}
+	if res.StatusCode != 200 {
+		return nil, nil, fmt.Errorf("HTTP failed to get Game By UserNum: %d", res.StatusCode)
+	}
 
 	defer res.Body.Close()
 
@@ -48,7 +51,7 @@ func (c *Client) GameByUserNum(usernum int, page *int) ([]UserGame, *int, error)
 	}
 
 	if result.Code != 200 {
-		fmt.Printf("StatusCode : %d\n", result.Code)
+		fmt.Printf("GameByUserNum StatusCode : %d\n", result.Code)
 		return nil, nil, err
 	}
 
