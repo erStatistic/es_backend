@@ -7,6 +7,18 @@ import (
 	"net/http"
 )
 
+func (c *Client) UserStatByUserIdList(userNums []int) ([][]UserCharacterStat, error) {
+	var result [][]UserCharacterStat
+	for _, userNum := range userNums {
+		stats, err := c.UserStatByUserId(userNum)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, stats)
+	}
+	return result, nil
+}
+
 func (c *Client) UserStatByUserId(userNum int) ([]UserCharacterStat, error) {
 	SeasonID := 33
 	MatchingMode := 3

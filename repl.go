@@ -125,6 +125,11 @@ func getCommands() map[string]command {
 			descrpition: "Displays character team information",
 			callback:    commandCharacterTeamInfo,
 		},
+		"statistics": {
+			name:        "statistics",
+			descrpition: "Displays statistics",
+			callback:    commandUserComboStatistics,
+		},
 		"exit": {
 			name:        "exit",
 			descrpition: "Exits the program",
