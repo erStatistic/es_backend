@@ -160,7 +160,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"GameRank", "GameID", "CharacterNums", "WeaponNums", "TeamKills", "MonsterCredits, TotalTime, mmrGainInGame"}
+	header := []string{"GameRank", "GameID", "CharacterNums", "WeaponNums", "TeamKills", "MonsterCredits", "TotalTime", "mmrGainInGame"}
 	if err := writer.Write(header); err != nil {
 		return err
 	}
