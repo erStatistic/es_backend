@@ -101,23 +101,12 @@ func getTeamInfo(cfg *config, gameID int) map[int]TeamInfo {
 
 		weaponName := getItemInfo(cfg, game.Equipment["0"])
 
-		// for Echion : charNum = 44
-		if charNum == 44 && weaponName != nil {
-			weaponMap := map[string]int{
-				"데스애더":   25,
-				"블랙맘바":   26,
-				"사이드와인더": 27,
-			}
-			for key, val := range weaponMap {
-				if strings.Contains(*weaponName, key) {
-					team.weaponNums = append(team.weaponNums, val)
-				}
-			}
+		// for Echion
+		de := strings.Contains(*weaponName, "데스애더")
+		bm := strings.Contains(*weaponName, "블랙맘바")
+		sw := strings.Contains(*weaponName, "사이드와인더")
 
-		} else {
-			team.weaponNums = append(team.weaponNums, game.BestWeapon)
-		}
-
+		// team.weaponNums = append(team.weaponNums, game.BestWeapon)
 		team.TeamKills = kills
 		team.MonsterCredits += credits
 		team.TotalTime = game.TotalTime
@@ -160,7 +149,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"GameRank", "GameID", "CharacterNums", "WeaponNums", "TeamKills", "MonsterCredits, TotalTime, mmrGainInGame"}
+	header := []string{"GameRank", "GameID", "CharacterNums", "WeaponNums", "TeamKills", "MonsterCredits"}
 	if err := writer.Write(header); err != nil {
 		return err
 	}

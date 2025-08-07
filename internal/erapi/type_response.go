@@ -24,3 +24,9 @@ type RankResponse struct {
 	Message  string   `json:"message"`
 	UserRank UserRank `json:"userRank"`
 }
+
+type UserStatResponse struct {
+	Code      int       `json:"code"`
+	Message   string    `json:"message"`
+	UserStats UserStats `json:"userStats"`
+}
