@@ -1,12 +1,11 @@
 -- +goose Up
-CREATE TABLE characters (
+CREATE TABLE games (
     id SERIAL PRIMARY KEY,
-    imageUrl varchar(255) NOT NULL UNIQUE,
-    name_KR VARCHAR(255) NOT NULL UNIQUE,
-    name_EN VARCHAR(255) NOT NULL UNIQUE,
+    game_id INT NOT NULL,
+    average_mmr INT NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- +goose Down
-DROP TABLE characters;
+DROP TABLE games;

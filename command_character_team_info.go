@@ -44,8 +44,10 @@ func commandCharacterTeamInfo(cfg *config, args ...string) error {
 			defer func() { <-sem }()
 			teams := getTeamInfo(cfg, gid)
 			mu.Lock()
-			for gameRank := range teams {
-				allofteams[gameRank] = append(allofteams[gameRank], teams[gameRank])
+			for rank, team := range teams {
+				if len(team.Users) == 3 {
+					allofteams[rank] = append(allofteams[rank], team)
+				}
 			}
 			mu.Unlock()
 
@@ -53,15 +55,15 @@ func commandCharacterTeamInfo(cfg *config, args ...string) error {
 	}
 	wg.Wait()
 
-	if err := saveTeamInfoToCSV("./internal/output/data/team_info.csv", allofteams); err != nil {
+	if err := saveTeamInfoToCSV("./internal/output/games/team_info.csv", allofteams); err != nil {
 		return fmt.Errorf("failed to save team info to CSV: %w", err)
 	}
 
-	if err := saveIDsToFile("./internal/output/data/user_ids.txt", userIDs); err != nil {
+	if err := saveIDsToFile("./internal/output/games/user_ids.txt", userIDs); err != nil {
 		return fmt.Errorf("failed to save user IDs: %w", err)
 	}
 
-	if err := saveIDsToFile("./internal/output/data/game_ids.txt", gameIDs); err != nil {
+	if err := saveIDsToFile("./internal/output/games/game_ids.txt", gameIDs); err != nil {
 		return fmt.Errorf("failed to save game IDs: %w", err)
 	}
 
@@ -72,12 +74,17 @@ func commandCharacterTeamInfo(cfg *config, args ...string) error {
 
 type TeamInfo struct {
 	GameID         int
-	CharacterNums  []int
-	weaponNums     []int
+	Users          []User
 	TeamKills      int
 	MonsterCredits int
 	TotalTime      int
 	mmrGainInGame  int
+}
+
+type User struct {
+	TeamNumber   int
+	CharacterNum int
+	WeaponNum    int
 }
 
 func getTeamInfo(cfg *config, gameID int) map[int]TeamInfo {
@@ -92,45 +99,69 @@ func getTeamInfo(cfg *config, gameID int) map[int]TeamInfo {
 		rank := game.GameRank
 		charNum := game.CharacterNum
 		kills := game.TeamKill
+		weaponNum := game.BestWeapon
+		gameID := game.GameID
 		credits := getMonsterCredits(game)
 
 		team := teams[rank]
 
-		team.GameID = game.GameID
-		team.CharacterNums = append(team.CharacterNums, charNum)
-
-		weaponName := getItemInfo(cfg, game.Equipment["0"])
-
 		// for Echion : charNum = 44
-		if charNum == 44 && weaponName != nil {
-			weaponMap := map[string]int{
-				"데스애더":   25,
-				"블랙맘바":   26,
-				"사이드와인더": 27,
-			}
-			for key, val := range weaponMap {
-				if strings.Contains(*weaponName, key) {
-					team.weaponNums = append(team.weaponNums, val)
+		if charNum == 44 {
+			weaponName := getItemInfo(cfg, game.Equipment["weapon"])
+			if weaponName != nil {
+				weaponMap := map[string]int{
+					"데스애더":   25,
+					"블랙맘바":   26,
+					"사이드와인더": 27,
+				}
+				for key, val := range weaponMap {
+					if strings.Contains(*weaponName, key) {
+						weaponNum = val
+						break
+					}
 				}
 			}
 
-		} else {
-			team.weaponNums = append(team.weaponNums, game.BestWeapon)
 		}
+		user := User{}
+		user.TeamNumber = game.TeamNumber
+		user.CharacterNum = charNum
+		user.WeaponNum = weaponNum
+		team.Users = append(team.Users, user)
 
+		team.GameID = gameID
 		team.TeamKills = kills
 		team.MonsterCredits += credits
 		team.TotalTime = game.TotalTime
 		team.mmrGainInGame = game.MmrGainInGame
 		teams[rank] = team
 	}
+	for rank, team := range teams {
 
+		if len(team.Users) > 3 {
+			count := make(map[int]int)
+			for _, user := range team.Users {
+				count[user.TeamNumber]++
+			}
+
+			var filteredUsers []User
+			for _, user := range team.Users {
+				if count[user.TeamNumber] == 3 {
+					filteredUsers = append(filteredUsers, user)
+				}
+			}
+
+			team.Users = filteredUsers
+			teams[rank] = team
+		}
+	}
 	return teams
 }
 
 func getItemInfo(cfg *config, WeaponItemID int) *string {
 	weapon, err := cfg.esapiClient.ItemInfo(WeaponItemID)
 	if err != nil {
+		fmt.Printf("IteamID: %d\n", WeaponItemID)
 		fmt.Printf("Failed to get item info: %v\n", err)
 		return nil
 	}
@@ -160,7 +191,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"GameRank", "GameID", "CharacterNums", "WeaponNums", "TeamKills", "MonsterCredits", "TotalTime", "mmrGainInGame"}
+	header := []string{"GameRank", "GameID", "TeamNum", "CharacterNums", "WeaponNums", "TeamKills", "MonsterCredits", "TotalTime", "mmrGainInGame"}
 	if err := writer.Write(header); err != nil {
 		return err
 	}
@@ -174,11 +205,17 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	for _, rank := range ranks {
 		teams := allofteams[rank]
 		for _, team := range teams {
-			charNumsStr := fmt.Sprintf("%v", team.CharacterNums)
-			weaponNumsStr := fmt.Sprintf("%v", team.weaponNums)
+			var characterNums, weaponNums []int
+			for _, user := range team.Users {
+				characterNums = append(characterNums, user.CharacterNum)
+				weaponNums = append(weaponNums, user.WeaponNum)
+			}
+			charNumsStr := fmt.Sprintf("%v", characterNums)
+			weaponNumsStr := fmt.Sprintf("%v", weaponNums)
 			record := []string{
 				fmt.Sprintf("%d", rank),
 				fmt.Sprintf("%d", team.GameID),
+				fmt.Sprintf("%d", team.Users[0].TeamNumber),
 				charNumsStr,
 				weaponNumsStr,
 				fmt.Sprintf("%d", team.TeamKills),

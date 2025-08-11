@@ -1,6 +1,7 @@
 -- +goose Up
 CREATE TABLE character_weapons_stats (
-    cw_id INT REFERENCES character_weapons (id) NOT NULL ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    cw_id INT NOT NULL REFERENCES character_weapons (id) ON DELETE CASCADE,
     atk INT NOT NULL,
     def INT NOT NULL,
     cc INT NOT NULL,

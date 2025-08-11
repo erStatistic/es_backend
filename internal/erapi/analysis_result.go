@@ -7,12 +7,13 @@ import (
 type AnalysisResult struct {
 	Clusters  []string
 	Total     int
+	Top1Ratio float64
 	Top3Ratio float64
 	Scores    float64
 }
 
 func (c *Client) AnalysisResult(chars [][]int) ([]AnalysisResult, error) {
-	positionList, err := readPositionCSV("./internal/statistics/position_dist.csv")
+	positionList, err := readPositionCSV("./internal/statistics/prepare/position_dist.csv")
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +29,7 @@ func (c *Client) AnalysisResult(chars [][]int) ([]AnalysisResult, error) {
 		clusters = append(clusters, charClusters)
 	}
 
-	clusterDistList, err := readClusterDistCSV("./internal/statistics/cluster_dist_updated.csv")
+	clusterDistList, err := readClusterDistCSV("./internal/statistics/cluster_dist_ratio.csv")
 	if err != nil {
 		return nil, err
 	}
@@ -49,11 +50,10 @@ func (c *Client) AnalysisResult(chars [][]int) ([]AnalysisResult, error) {
 		}
 	}
 	return results, nil
-
 }
 
 func (c *Client) SortClusterDistByNormalizedScore() []ClusterDist {
-	clusterDistList, err := readClusterDistCSV("./internal/statistics/cluster_dist_updated.csv")
+	clusterDistList, err := readClusterDistCSV("./internal/statistics/cluster_dist_ratio.csv")
 	if err != nil {
 		return nil
 	}

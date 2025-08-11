@@ -18,6 +18,13 @@ type config struct {
 }
 
 func startRepl(cfg *config, args ...string) {
+	time, _ := cfg.esapiClient.TimeList()
+	fmt.Println()
+	fmt.Println("Time List")
+	for i, item := range time {
+		fmt.Printf("Row %d: Code=%d, Name=%s, Seconds=%d, Total=%d\n", i+1, item.Code, item.Name, item.Seconds, item.Total)
+	}
+
 	reader := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("ER > ")

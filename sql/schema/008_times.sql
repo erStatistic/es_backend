@@ -1,11 +1,14 @@
 -- +goose Up
-CREATE TABLE images (
+CREATE TABLE times (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    images_url VARCHAR(255) NOT NULL,
+    day_num INT NOT NULL,
+    seconds INT NOT NULL,
+    is_daytime BOOL NOT NULL UNIQUE,
+    start_time INT NOT NULL,
+    end_time INT NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- +goose Down
-DROP TABLE images;
+DROP TABLE times;

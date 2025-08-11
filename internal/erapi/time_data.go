@@ -7,16 +7,18 @@ import (
 	"strconv"
 )
 
-type Position struct {
-	code     int
-	Position string
+type Time struct {
+	Code    int
+	Name    string
+	Seconds int
+	Total   int
 }
 
-func (c *Client) PositionList() ([]Position, error) {
-	return readPositionCSV("./internal/statistics/prepare/position_dist.csv")
+func (c *Client) TimeList() ([]Time, error) {
+	return readTimeCSV("./internal/statistics/prepare/time_data.csv")
 }
 
-func readPositionCSV(filePath string) ([]Position, error) {
+func readTimeCSV(filePath string) ([]Time, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %s: %v", filePath, err)
@@ -35,15 +37,17 @@ func readPositionCSV(filePath string) ([]Position, error) {
 	}
 
 	requiredHeaders := []string{
-		"no", "kmeans",
+		"no", "name", "seconds", "totaltime",
 	}
+
 	for _, h := range requiredHeaders {
 		if _, exists := headerMap[h]; !exists {
 			return nil, fmt.Errorf("missing required header: %s", h)
 		}
 	}
 
-	var positionList []Position
+	var timeList []Time
+
 	for rowNum := 2; ; rowNum++ {
 		record, err := reader.Read()
 		if err != nil {
@@ -57,26 +61,22 @@ func readPositionCSV(filePath string) ([]Position, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse code at row %d: %v", rowNum, err)
 		}
-		position := record[headerMap["kmeans"]]
+		name := record[headerMap["name"]]
+		seconds, err := strconv.Atoi(record[headerMap["seconds"]])
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse seconds at row %d: %v", rowNum, err)
+		}
+		total, err := strconv.Atoi(record[headerMap["totaltime"]])
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse total at row %d: %v", rowNum, err)
+		}
 
-		positionList = append(positionList, Position{
-			code:     code,
-			Position: position,
+		timeList = append(timeList, Time{
+			Code:    code,
+			Name:    name,
+			Seconds: seconds,
+			Total:   total,
 		})
 	}
-
-	return positionList, nil
-}
-
-func printPositionList() {
-
-	positionList, err := readPositionCSV("position_dist.csv")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-
-	for i, item := range positionList[:min(5, len(positionList))] {
-		fmt.Printf("Row %d: Code=%d, Position=%s\n", i+1, item.code, item.Position)
-	}
+	return timeList, nil
 }

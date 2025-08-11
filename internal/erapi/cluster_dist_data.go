@@ -14,8 +14,15 @@ type ClusterDist struct {
 	Counts          [8]int   // 1,2,3,4,5,6,7,8
 	Total           int      // Total
 	WeightedScore   int      // Weighted_Score
+	TotalMmrGain    float64  // TotalMmrGain
+	AvarageMmr      float64  // Avarage_Mmr
+	Top1Ratio       float64  // Top1_Ratio
 	Top3Ratio       float64  // Top3_Ratio
 	NormalizedScore float64  // Normalized_Score
+}
+
+func (c *Client) ClusterDistList() ([]ClusterDist, error) {
+	return readClusterDistCSV("./internal/statistics/prepare/cluster_dist_ratio.csv")
 }
 
 func readClusterDistCSV(filePath string) ([]ClusterDist, error) {
@@ -37,8 +44,8 @@ func readClusterDistCSV(filePath string) ([]ClusterDist, error) {
 	}
 
 	requiredHeaders := []string{
-		"Cluster_Combo_Key", "1", "2", "3", "4", "5", "6", "7", "8",
-		"Total", "Weighted_Score", "Top3_Ratio", "Normalized_Score",
+		"Cluster_Combo_Mapped", "1", "2", "3", "4", "5", "6", "7", "8",
+		"Total_Count", "TotalMmrGain", "AverageMmrGain", "Total", "Weighted_Score", "Top1_Ratio", "Top3_Ratio", "Normalized_Score",
 	}
 	for _, h := range requiredHeaders {
 		if _, exists := headerMap[h]; !exists {
@@ -57,14 +64,14 @@ func readClusterDistCSV(filePath string) ([]ClusterDist, error) {
 		}
 
 		var counts [8]int
-		for i := 0; i < 8; i++ {
+		for i := range 8 {
 			counts[i], err = strconv.Atoi(record[headerMap[strconv.Itoa(i+1)]])
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse count %d at row %d: %v", i+1, rowNum, err)
 			}
 		}
 
-		clusterComboKey := parseClusterKey(record[headerMap["Cluster_Combo_Key"]])
+		clusterComboKey := parseClusterKey(record[headerMap["Cluster_Combo_Mapped"]])
 
 		total, err := strconv.Atoi(record[headerMap["Total"]])
 		if err != nil {
@@ -77,6 +84,16 @@ func readClusterDistCSV(filePath string) ([]ClusterDist, error) {
 		weightedScore, err := strconv.Atoi(record[headerMap["Weighted_Score"]])
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse Weighted_Score at row %d: %v", rowNum, err)
+		}
+
+		avgMMR, err := strconv.ParseFloat(record[headerMap["AverageMmrGain"]], 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse AvarageMMr at row %d: %v", rowNum, err)
+		}
+
+		top1Ratio, err := strconv.ParseFloat(record[headerMap["Top1_Ratio"]], 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse Top1_Ratio at row %d: %v", rowNum, err)
 		}
 
 		top3Ratio, err := strconv.ParseFloat(record[headerMap["Top3_Ratio"]], 64)
@@ -94,6 +111,8 @@ func readClusterDistCSV(filePath string) ([]ClusterDist, error) {
 			Counts:          counts,
 			Total:           total,
 			WeightedScore:   weightedScore,
+			AvarageMmr:      avgMMR,
+			Top1Ratio:       top1Ratio,
 			Top3Ratio:       top3Ratio,
 			NormalizedScore: normalizedScore,
 		})
@@ -126,7 +145,7 @@ func stringSlicesEqual(a, b []string) bool {
 }
 
 func printClusterDist() {
-	clusterDistList, err := readClusterDistCSV("cluster_dist_updated.csv")
+	clusterDistList, err := readClusterDistCSV("./internal/statistics/cluster_dist_ratio.csv")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
