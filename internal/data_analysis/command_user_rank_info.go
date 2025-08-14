@@ -1,11 +1,11 @@
-package main
+package data_analysis
 
 import (
 	"fmt"
 	"strconv"
 )
 
-func commandUserRankInfo(cfg *config, args ...string) error {
+func commandUserRankInfo(cfg *Config, args ...string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("usage: userrankinfo <userID>")
 	}
@@ -16,7 +16,7 @@ func commandUserRankInfo(cfg *config, args ...string) error {
 		return err
 	}
 
-	userRank, err := cfg.esapiClient.RankUserInfo(userID, 3, 33)
+	userRank, err := cfg.EsapiClient.RankUserInfo(userID, 3, 33)
 	if err != nil {
 		return err
 	}

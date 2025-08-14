@@ -1,8 +1,8 @@
-package main
+package data_analysis
 
 import "fmt"
 
-func commandHelp(cfg *config, args ...string) error {
+func commandHelp(cfg *Config, args ...string) error {
 	fmt.Println()
 	fmt.Println("Welcome ER command line interface")
 	fmt.Println()

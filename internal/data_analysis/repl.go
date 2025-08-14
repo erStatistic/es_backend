@@ -1,4 +1,4 @@
-package main
+package data_analysis
 
 import (
 	"bufio"
@@ -6,19 +6,21 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kaeba0616/es_backend/internal/database"
 	"github.com/kaeba0616/es_backend/internal/erapi"
 )
 
-type config struct {
-	esapiClient erapi.Client
-	currentUser *erapi.User
-	users       []erapi.User
-	rankers     []erapi.User
-	nextgame    *int
+type Config struct {
+	EsapiClient erapi.Client
+	CurrentUser *erapi.User
+	Users       []erapi.User
+	Rankers     []erapi.User
+	Nextgame    *int
+	Bb          *database.Queries
 }
 
-func startRepl(cfg *config, args ...string) {
-	time, _ := cfg.esapiClient.TimeList()
+func StartRepl(cfg *Config, args ...string) {
+	time, _ := cfg.EsapiClient.TimeList()
 	fmt.Println()
 	fmt.Println("Time List")
 	for i, item := range time {
@@ -62,7 +64,7 @@ func cleanInput(text string) []string {
 type command struct {
 	name        string
 	descrpition string
-	callback    func(*config, ...string) error
+	callback    func(*Config, ...string) error
 }
 
 func getCommands() map[string]command {
@@ -136,6 +138,11 @@ func getCommands() map[string]command {
 			name:        "statistics",
 			descrpition: "Displays statistics",
 			callback:    commandUserComboStatistics,
+		},
+		"server": {
+			name:        "server",
+			descrpition: "implements our server",
+			callback:    commandServer,
 		},
 		"exit": {
 			name:        "exit",

@@ -1,19 +1,19 @@
-package main
+package data_analysis
 
 import "fmt"
 
-func commandTopRankUserInfo(cfg *config, args ...string) error {
+func commandTopRankUserInfo(cfg *Config, args ...string) error {
 
 	teamMode := 3
 	seasonId := 33
 	serverCode := 10
 
-	ranks, err := cfg.esapiClient.TopRankUserInfo(teamMode, seasonId, serverCode)
+	ranks, err := cfg.EsapiClient.TopRankUserInfo(teamMode, seasonId, serverCode)
 	if err != nil {
 		return err
 	}
 
-	cfg.rankers = ranks
+	cfg.Rankers = ranks
 
 	for i, rank := range ranks {
 		if i >= 900 {

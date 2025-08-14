@@ -1,10 +1,10 @@
-package main
+package data_analysis
 
 import "fmt"
 
-func commandWeaponInfo(cfg *config, args ...string) error {
+func commandWeaponInfo(cfg *Config, args ...string) error {
 
-	weapons, err := cfg.esapiClient.GetWeaponInfo()
+	weapons, err := cfg.EsapiClient.GetWeaponInfo()
 	if err != nil {
 		return err
 	}

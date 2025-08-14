@@ -1,10 +1,10 @@
-package main
+package data_analysis
 
 import "fmt"
 
-func commandCharacterInfo(cfg *config, args ...string) error {
+func commandCharacterInfo(cfg *Config, args ...string) error {
 
-	characters, err := cfg.esapiClient.GetCharacterInfo()
+	characters, err := cfg.EsapiClient.GetCharacterInfo()
 	if err != nil {
 		return err
 	}

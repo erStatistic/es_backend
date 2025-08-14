@@ -5,11 +5,109 @@
 package database
 
 import (
-	"github.com/google/uuid"
+	"database/sql"
 )
 
-type User struct {
-	ID      uuid.UUID
-	UserNum int32
-	Name    string
+type Character struct {
+	ID        int32
+	Imageurl  sql.NullString
+	NameKr    string
+	NameEn    string
+	UpdatedAt sql.NullTime
+	CreatedAt sql.NullTime
+}
+
+type CharacterWeapon struct {
+	ID          int32
+	CharacterID int32
+	WeaponID    int32
+	PositionID  int32
+	ClusterID   int32
+	UpdatedAt   sql.NullTime
+	CreatedAt   sql.NullTime
+}
+
+type CharacterWeaponsStat struct {
+	ID        int32
+	CwID      int32
+	Atk       int32
+	Def       int32
+	Cc        int32
+	Spd       int32
+	Sup       int32
+	UpdatedAt sql.NullTime
+	CreatedAt sql.NullTime
+}
+
+type Cluster struct {
+	ID        int32
+	Imageurl  sql.NullString
+	Name      string
+	UpdatedAt sql.NullTime
+	CreatedAt sql.NullTime
+}
+
+type Game struct {
+	ID         int32
+	GameID     int32
+	AverageMmr int32
+	UpdatedAt  sql.NullTime
+	CreatedAt  sql.NullTime
+}
+
+type GameTeam struct {
+	ID            int32
+	GameID        sql.NullInt32
+	TeamID        int32
+	GameRank      int32
+	TeamKills     int32
+	MosterCredits int32
+	GainedMmr     int32
+	UpdatedAt     sql.NullTime
+	CreatedAt     sql.NullTime
+}
+
+type GameTeamCw struct {
+	ID         int32
+	GameTeamID int32
+	CwID       int32
+	UpdatedAt  sql.NullTime
+	CreatedAt  sql.NullTime
+}
+
+type Position struct {
+	ID        int32
+	Imageurl  sql.NullString
+	Name      string
+	UpdatedAt sql.NullTime
+	CreatedAt sql.NullTime
+}
+
+type Tier struct {
+	ID        int32
+	Imageurl  sql.NullString
+	Name      string
+	Mmr       int32
+	UpdatedAt sql.NullTime
+	CreatedAt sql.NullTime
+}
+
+type Time struct {
+	ID        int32
+	DayNum    int32
+	Seconds   int32
+	IsDaytime bool
+	StartTime int32
+	EndTime   int32
+	UpdatedAt sql.NullTime
+	CreatedAt sql.NullTime
+}
+
+type Weapon struct {
+	ID        int32
+	Imageurl  sql.NullString
+	NameKr    string
+	NameEn    string
+	UpdatedAt sql.NullTime
+	CreatedAt sql.NullTime
 }

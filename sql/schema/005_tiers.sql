@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE tiers (
     id SERIAL PRIMARY KEY,
-    imageUrl varchar(255) NOT NULL UNIQUE,
+    imageUrl varchar(255) UNIQUE,
     name VARCHAR(255) NOT NULL UNIQUE,
     mmr INT NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

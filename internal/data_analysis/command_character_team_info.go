@@ -1,4 +1,4 @@
-package main
+package data_analysis
 
 import (
 	"encoding/csv"
@@ -11,19 +11,19 @@ import (
 	"github.com/kaeba0616/es_backend/internal/erapi"
 )
 
-func commandCharacterTeamInfo(cfg *config, args ...string) error {
+func commandCharacterTeamInfo(cfg *Config, args ...string) error {
 
 	if len(args) > 0 {
 		return fmt.Errorf("usage: characterteaminfo")
 	}
 
 	initialUserIDs := []int{}
-	for _, user := range cfg.rankers {
+	for _, user := range cfg.Rankers {
 		initialUserIDs = append(initialUserIDs, user.UserNum)
 	}
 	fmt.Println()
 	fmt.Println("Start character team info")
-	userIDs, gameIDs, err := cfg.esapiClient.GetCharacterTeamInfo(initialUserIDs)
+	userIDs, gameIDs, err := cfg.EsapiClient.GetCharacterTeamInfo(initialUserIDs)
 	if err != nil {
 		return err
 	}
@@ -87,9 +87,9 @@ type User struct {
 	WeaponNum    int
 }
 
-func getTeamInfo(cfg *config, gameID int) map[int]TeamInfo {
+func getTeamInfo(cfg *Config, gameID int) map[int]TeamInfo {
 	fmt.Printf("Getting team info for game ID: %d\n", gameID)
-	usergames, err := cfg.esapiClient.GameByGameID(gameID)
+	usergames, err := cfg.EsapiClient.GameByGameID(gameID)
 	if err != nil {
 		fmt.Printf("Failed to get game by game ID: %v\n", err)
 		return nil
@@ -158,8 +158,8 @@ func getTeamInfo(cfg *config, gameID int) map[int]TeamInfo {
 	return teams
 }
 
-func getItemInfo(cfg *config, WeaponItemID int) *string {
-	weapon, err := cfg.esapiClient.ItemInfo(WeaponItemID)
+func getItemInfo(cfg *Config, WeaponItemID int) *string {
+	weapon, err := cfg.EsapiClient.ItemInfo(WeaponItemID)
 	if err != nil {
 		fmt.Printf("IteamID: %d\n", WeaponItemID)
 		fmt.Printf("Failed to get item info: %v\n", err)

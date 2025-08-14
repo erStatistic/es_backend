@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE characters (
     id SERIAL PRIMARY KEY,
-    imageUrl varchar(255) NOT NULL UNIQUE,
+    imageUrl varchar(255),
     name_KR VARCHAR(255) NOT NULL UNIQUE,
     name_EN VARCHAR(255) NOT NULL UNIQUE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

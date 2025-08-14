@@ -1,4 +1,4 @@
-package main
+package data_analysis
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func commandGameDetail(cfg *config, args ...string) error {
+func commandGameDetail(cfg *Config, args ...string) error {
 	if len(args) > 1 || len(args) == 0 {
 		return errors.New("usage : gamedetail [gameid]")
 	}
@@ -14,7 +14,7 @@ func commandGameDetail(cfg *config, args ...string) error {
 	arg1 := args[0]
 
 	gameID, err := strconv.Atoi(arg1)
-	games, err := cfg.esapiClient.GameByGameID(gameID)
+	games, err := cfg.EsapiClient.GameByGameID(gameID)
 	if err != nil {
 		return err
 	}

@@ -1,16 +1,16 @@
-package main
+package data_analysis
 
 import (
 	"fmt"
 )
 
-func commandUserComboStatistics(cfg *config, args ...string) error {
+func commandUserComboStatistics(cfg *Config, args ...string) error {
 	users := args
 	count := len(users)
 
 	userNums := []int{}
 	for _, user := range users {
-		userNum, err := cfg.esapiClient.UserByNickname(user)
+		userNum, err := cfg.EsapiClient.UserByNickname(user)
 		if err != nil {
 			return err
 		}
@@ -20,7 +20,7 @@ func commandUserComboStatistics(cfg *config, args ...string) error {
 	chars := [][]int{
 		{81, 57, 16},
 	}
-	combos, err := cfg.esapiClient.AnalysisResult(chars)
+	combos, err := cfg.EsapiClient.AnalysisResult(chars)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func commandUserComboStatistics(cfg *config, args ...string) error {
 	case 0:
 		fmt.Println("Top 5 combo in every game Count 0")
 		fmt.Println()
-		combos := cfg.esapiClient.SortClusterDistByNormalizedScore()
+		combos := cfg.EsapiClient.SortClusterDistByNormalizedScore()
 		// until 5 index iteam
 		for i := range 5 {
 			fmt.Printf("Combo %d\n", i+1)
@@ -83,8 +83,8 @@ func commandUserComboStatistics(cfg *config, args ...string) error {
 	return nil
 }
 
-func getCombos(cfg *config, userNums []int) error {
-	_, err := cfg.esapiClient.UserStatByUserIdList(userNums)
+func getCombos(cfg *Config, userNums []int) error {
+	_, err := cfg.EsapiClient.UserStatByUserIdList(userNums)
 	if err != nil {
 		return err
 	}

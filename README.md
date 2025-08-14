@@ -8,24 +8,32 @@
   small development team, we resolved the port forwarding issue by using
   **Tailscale**.
 
-## Character Classification
+## Character Cluster
 
-- Characters are categorized based on their weapon types and their unique
-  combinations.
+- To cluster characters with weapon, we choose the way called Kmeans.
+- Actually, We can choose others but, the value of Kmeans is smiliar to our real
+  value.
 
-  - The classification is based on a specific position list, referenced from
-    Youtuber 모좀's tier list:
+## Character Scoring
 
-    - Tank (탱커)
+- To calculate a score for each character, the following steps are applied:
 
-    - Tank Bruiser (탱 브루저)
+  - Collect Win Rates by Combination
+    - For each character, gather win rates for all weapon combinations they can
+      use.
+  - Apply Weight Based on Sample Size
+    - Weight each win rate by the number of matches played with that
+      combination.
+    - This ensures that combinations with more data have a stronger influence on
+      the score.
+  - Average Weighted Scores
+    - Calculate the weighted average win rate across all combinations for the
+      character.
+  - Normalize Scores
+    - Normalize the results so that scores can be compared fairly across all
+      characters.
+  - Optional: Role-Based Adjustment
 
-    - Damage Bruiser (딜 브루저)
-
-    - Assassin (암살자)
-
-    - Auto Attack Dealer (평원딜)
-
-    - Skill Amplification Mage (스증 마법사)
-
-    - Support (서포터)
+- Apply additional weighting or adjustments based on the character’s intended
+  role
+  - (e.g., Support, DPS, Tank).

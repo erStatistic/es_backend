@@ -1,10 +1,10 @@
-package main
+package data_analysis
 
 import (
 	"fmt"
 )
 
-func commandUserGame(cfg *config, args ...string) error {
+func commandUserGame(cfg *Config, args ...string) error {
 
 	var userNum int
 	var nextFlag bool
@@ -15,7 +15,7 @@ func commandUserGame(cfg *config, args ...string) error {
 			continue
 		}
 		if arg != "" {
-			user, err := cfg.esapiClient.UserByNickname(arg)
+			user, err := cfg.EsapiClient.UserByNickname(arg)
 			if err != nil {
 				return err
 			}
@@ -24,7 +24,7 @@ func commandUserGame(cfg *config, args ...string) error {
 		}
 	}
 	if userNum == 0 {
-		userNum = cfg.currentUser.UserNum
+		userNum = cfg.CurrentUser.UserNum
 	}
 
 	// Validate argument count
@@ -34,20 +34,20 @@ func commandUserGame(cfg *config, args ...string) error {
 
 	var nextgame *int
 	if nextFlag {
-		nextgame = cfg.nextgame
+		nextgame = cfg.Nextgame
 	}
 
-	usergames, nxt, err := cfg.esapiClient.GameByUserNum(userNum, nextgame)
+	usergames, nxt, err := cfg.EsapiClient.GameByUserNum(userNum, nextgame)
 	if err != nil {
 		return err
 	}
-	cfg.nextgame = nxt
+	cfg.Nextgame = nxt
 
 	for _, game := range usergames {
 		fmt.Printf("GameID: %d\n", game.GameID)
 	}
 
-	fmt.Printf("nextGameID: %d\n", *cfg.nextgame)
+	fmt.Printf("nextGameID: %d\n", *cfg.Nextgame)
 
 	return nil
 }

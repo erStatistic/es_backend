@@ -1,8 +1,8 @@
-package main
+package data_analysis
 
 import "fmt"
 
-func commandConfig(cfg *config, args ...string) error {
+func commandConfig(cfg *Config, args ...string) error {
 
 	fmt.Println("=============================")
 	fmt.Println("           Config            ")
@@ -11,8 +11,8 @@ func commandConfig(cfg *config, args ...string) error {
 	fmt.Println()
 	fmt.Println()
 
-	fmt.Printf("CurrentUser : %s\n", cfg.currentUser.Nickname)
-	fmt.Printf("Nextgame : %d\n", *cfg.nextgame)
+	fmt.Printf("CurrentUser : %s\n", cfg.CurrentUser.Nickname)
+	fmt.Printf("Nextgame : %d\n", *cfg.Nextgame)
 
 	fmt.Println()
 	fmt.Println()

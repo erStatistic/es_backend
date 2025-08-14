@@ -1,17 +1,17 @@
-package main
+package data_analysis
 
 import (
 	"fmt"
 )
 
-func commandUser(cfg *config, args ...string) error {
+func commandUser(cfg *Config, args ...string) error {
 	if len(args) > 1 {
 		return fmt.Errorf("usage : user [nickname]")
 	}
 
 	nickname := args[0]
 
-	user, err := cfg.esapiClient.UserByNickname(nickname)
+	user, err := cfg.EsapiClient.UserByNickname(nickname)
 	if err != nil {
 		return err
 	}
@@ -20,7 +20,7 @@ func commandUser(cfg *config, args ...string) error {
 	}
 
 	exists := false
-	for _, u := range cfg.users {
+	for _, u := range cfg.Users {
 		if u.UserNum == user.UserNum {
 			exists = true
 			break
@@ -28,8 +28,8 @@ func commandUser(cfg *config, args ...string) error {
 	}
 
 	if !exists {
-		cfg.users = append(cfg.users, *user)
-		cfg.currentUser = user
+		cfg.Users = append(cfg.Users, *user)
+		cfg.CurrentUser = user
 	}
 
 	fmt.Printf("Nickname: %s\n", user.Nickname)

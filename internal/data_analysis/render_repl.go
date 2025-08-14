@@ -1,4 +1,4 @@
-package main
+package data_analysis
 
 import (
 	"fmt"
@@ -9,9 +9,9 @@ import (
 	"golang.org/x/term"
 )
 
-func renderRepl(cfg *config) {
+func renderRepl(cfg *Config) {
 
-	users := cfg.users
+	users := cfg.Users
 
 	nicknames := makeUserNicknameList(users)
 	oldState, err := term.MakeRaw(int(syscall.Stdin))
@@ -57,8 +57,8 @@ func renderRepl(cfg *config) {
 	if err := clearScreen(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to clear screen: %v\n", err)
 	}
-	cfg.currentUser = &users[selected]
-	fmt.Printf("\x1b[HYou selected: \x1b[32m%s\x1b[0m\n", cfg.currentUser.Nickname)
+	cfg.CurrentUser = &users[selected]
+	fmt.Printf("\x1b[HYou selected: \x1b[32m%s\x1b[0m\n", cfg.CurrentUser.Nickname)
 	moveCursorFront(users)
 }
 
