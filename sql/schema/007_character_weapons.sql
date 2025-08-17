@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS character_weapons (
     cluster_id INT NOT NULL REFERENCES clusters (id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT uk_character_weapons_combo UNIQUE (character_id, weapon_id, position_id, cluster_id)
+    CONSTRAINT uk_character_weapons_combo UNIQUE (character_id, weapon_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_cw_char ON character_weapons (character_id);

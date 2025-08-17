@@ -22,13 +22,14 @@ func (cfg *Config) CharacterCtx(next http.Handler) http.Handler {
 		}
 		Character, err := cfg.DB.GetCharacter(context.Background(), int32(CharacterID))
 		if err != nil {
+			var msg string
 			if err == sql.ErrNoRows {
-				respondWithError(w, http.StatusNotFound, "Character not found", err)
-				return
+				msg = "Character not found"
 			} else {
-				respondWithError(w, http.StatusNotFound, "Failed to get character", err)
-				return
+				msg = "Failed to get character"
 			}
+			respondWithError(w, http.StatusNotFound, msg, err)
+			return
 		}
 
 		ctx := context.WithValue(r.Context(), characterKey, Character)

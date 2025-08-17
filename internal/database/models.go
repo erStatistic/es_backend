@@ -28,8 +28,7 @@ type CharacterWeapon struct {
 	UpdatedAt   time.Time
 }
 
-type CharacterWeaponsStat struct {
-	ID        int32
+type CharacterWeaponStat struct {
 	CwID      int32
 	Atk       int32
 	Def       int32
@@ -83,18 +82,18 @@ type GameTeamCw struct {
 type Position struct {
 	ID        int32
 	Name      string
-	ImageUrl  sql.NullString
+	ImageUrl  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 type Tier struct {
 	ID        int32
-	Imageurl  string
+	ImageUrl  string
 	Name      string
 	Mmr       int32
-	UpdatedAt sql.NullTime
-	CreatedAt sql.NullTime
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Time struct {

@@ -1,7 +1,6 @@
 -- +goose Up
-CREATE TABLE IF NOT EXISTS character_weapons_stats (
-    id SERIAL PRIMARY KEY,
-    cw_id INT NOT NULL UNIQUE REFERENCES character_weapons (id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS character_weapon_stats (
+    cw_id INT NOT NULL PRIMARY KEY REFERENCES character_weapons (id) ON DELETE CASCADE,
     atk INT NOT NULL,
     def INT NOT NULL,
     cc INT NOT NULL,
@@ -18,15 +17,15 @@ CREATE TABLE IF NOT EXISTS character_weapons_stats (
     )
 );
 
-CREATE INDEX IF NOT EXISTS idx_cws_cw ON character_weapons_stats (cw_id);
+CREATE INDEX IF NOT EXISTS idx_cw_cw ON character_weapon_stats (cw_id);
 
-CREATE TRIGGER trg_cws_stats_updated BEFORE
-UPDATE ON character_weapons_stats FOR EACH ROW
+CREATE TRIGGER trg_cws_stat_updated BEFORE
+UPDATE ON character_weapon_stats FOR EACH ROW
 EXECUTE FUNCTION set_updated_at ();
 
 -- +goose Down
-DROP TRIGGER IF EXISTS trg_character_weapons_stats_updated ON character_weapons_stats;
+DROP TRIGGER IF EXISTS trg_character_weapon_stats_updated ON character_weapon_stats;
 
-DROP INDEX IF EXISTS idx_cws_cw;
+DROP INDEX IF EXISTS idx_cw_cw;
 
-DROP TABLE IF EXISTS character_weapons_stats;
+DROP TABLE IF EXISTS character_weapon_stats;

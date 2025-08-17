@@ -1,11 +1,11 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS tiers (
     id SERIAL PRIMARY KEY,
-    imageUrl varchar(255) NOT NULL DEFAULT '',
+    image_url varchar(255) NOT NULL DEFAULT '',
     name VARCHAR(50) NOT NULL UNIQUE,
     mmr INT NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TRIGGER trg_tiers_updated BEFORE
