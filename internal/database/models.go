@@ -6,15 +6,16 @@ package database
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Character struct {
 	ID        int32
-	Imageurl  sql.NullString
+	Code      int32
 	NameKr    string
-	NameEn    string
-	UpdatedAt sql.NullTime
-	CreatedAt sql.NullTime
+	ImageUrl  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type CharacterWeapon struct {
@@ -23,8 +24,8 @@ type CharacterWeapon struct {
 	WeaponID    int32
 	PositionID  int32
 	ClusterID   int32
-	UpdatedAt   sql.NullTime
-	CreatedAt   sql.NullTime
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type CharacterWeaponsStat struct {
@@ -35,57 +36,61 @@ type CharacterWeaponsStat struct {
 	Cc        int32
 	Spd       int32
 	Sup       int32
-	UpdatedAt sql.NullTime
-	CreatedAt sql.NullTime
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Cluster struct {
 	ID        int32
-	Imageurl  sql.NullString
 	Name      string
-	UpdatedAt sql.NullTime
-	CreatedAt sql.NullTime
+	ImageUrl  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Game struct {
 	ID         int32
-	GameID     int32
-	AverageMmr int32
-	UpdatedAt  sql.NullTime
-	CreatedAt  sql.NullTime
+	GameCode   int64
+	StartedAt  sql.NullTime
+	AverageMmr sql.NullInt32
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type GameTeam struct {
-	ID            int32
-	GameID        sql.NullInt32
-	TeamID        int32
-	GameRank      int32
-	TeamKills     int32
-	MosterCredits int32
-	GainedMmr     int32
-	UpdatedAt     sql.NullTime
-	CreatedAt     sql.NullTime
+	ID             int32
+	GameID         int32
+	TeamID         int32
+	GameRank       int32
+	TeamKills      int32
+	MonsterCredits int32
+	GainedMmr      int32
+	TeamAvgMmr     int32
+	TotalTime      int32
+	TimesID        sql.NullInt32
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type GameTeamCw struct {
 	ID         int32
 	GameTeamID int32
 	CwID       int32
-	UpdatedAt  sql.NullTime
-	CreatedAt  sql.NullTime
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type Position struct {
 	ID        int32
-	Imageurl  sql.NullString
 	Name      string
-	UpdatedAt sql.NullTime
-	CreatedAt sql.NullTime
+	ImageUrl  sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Tier struct {
 	ID        int32
-	Imageurl  sql.NullString
+	Imageurl  string
 	Name      string
 	Mmr       int32
 	UpdatedAt sql.NullTime
@@ -94,20 +99,20 @@ type Tier struct {
 
 type Time struct {
 	ID        int32
-	DayNum    int32
+	No        int32
+	Name      string
 	Seconds   int32
-	IsDaytime bool
 	StartTime int32
 	EndTime   int32
-	UpdatedAt sql.NullTime
-	CreatedAt sql.NullTime
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Weapon struct {
 	ID        int32
-	Imageurl  sql.NullString
+	Code      int32
 	NameKr    string
-	NameEn    string
-	UpdatedAt sql.NullTime
-	CreatedAt sql.NullTime
+	ImageUrl  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

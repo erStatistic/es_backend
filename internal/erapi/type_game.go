@@ -71,6 +71,9 @@ type UserGame struct {
 	BonusExp                      int            `json:"bonusExp"`
 	StartDtm                      string         `json:"startDtm"`
 	Duration                      int            `json:"duration"`
+	MmrBefore                     int            `json:"mmrBefore"`
+	MmrGain                       int            `json:"mmrGain"`
+	MmrAfter                      int            `json:"mmrAfter"`
 	PlayTime                      int            `json:"playTime"`
 	WatchTime                     int            `json:"watchTime"`
 	TotalTime                     int            `json:"totalTime"`

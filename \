@@ -1,0 +1,37 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"log/slog"
+	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
+	rumiapi "github.com/kaeba0616/es_backend/internal/api"
+	"github.com/kaeba0616/es_backend/internal/database"
+	_ "github.com/lib/pq"
+)
+
+const (
+	port = "3333"
+)
+
+func main() {
+	_ = godotenv.Load()
+	dbUrl := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	dbQueries := database.New(db)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	apiCfg := rumiapi.NewConfig(dbQueries, logger)
+
+	log.Println("starting server on port", port)
+	fmt.Println("http://localhost:3333/api/v1/characters")
+	log.Fatal(http.ListenAndServe(":"+port, apiCfg.Routes()))
+}

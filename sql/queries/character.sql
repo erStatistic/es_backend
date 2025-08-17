@@ -1,17 +1,18 @@
 -- name: CreateCharacter :one
 INSERT INTO
-    characters (
-        id,
-        imageUrl,
-        name_kr,
-        name_en,
-        updated_at,
-        created_at
-    )
+    characters (code, image_url, name_kr)
 VALUES
-    ($1, $2, $3, $4, NOW(), NOW())
+    ($1, $2, $3)
 RETURNING
     *;
+
+-- name: ListCharacters :many
+SELECT
+    *
+FROM
+    characters
+ORDER BY
+    code ASC;
 
 -- name: GetCharacter :one
 SELECT
@@ -19,24 +20,17 @@ SELECT
 FROM
     characters
 WHERE
-    name_KR = $1;
+    code = $1;
 
--- name: DeleteCharacterById :exec
+-- name: DeleteCharacter :exec
 DELETE FROM characters
 WHERE
-    id = $1;
-
--- name: DeleteCharacterByName :exec
-DELETE FROM characters
-WHERE
-    name_KR = $1;
+    code = $1;
 
 -- name: PatchCharacter :exec
 UPDATE characters
 SET
-    imageurl = $2,
-    name_kr = $3,
-    name_en = $4,
-    updated_at = NOW()
+    image_url = $2,
+    name_kr = $3
 WHERE
-    id = $1;
+    code = $1;

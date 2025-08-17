@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kaeba0616/es_backend/internal/database"
 	"github.com/kaeba0616/es_backend/internal/erapi"
 )
 
@@ -16,7 +15,6 @@ type Config struct {
 	Users       []erapi.User
 	Rankers     []erapi.User
 	Nextgame    *int
-	Bb          *database.Queries
 }
 
 func StartRepl(cfg *Config, args ...string) {
@@ -138,11 +136,6 @@ func getCommands() map[string]command {
 			name:        "statistics",
 			descrpition: "Displays statistics",
 			callback:    commandUserComboStatistics,
-		},
-		"server": {
-			name:        "server",
-			descrpition: "implements our server",
-			callback:    commandServer,
 		},
 		"exit": {
 			name:        "exit",
