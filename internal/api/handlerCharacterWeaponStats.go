@@ -20,7 +20,7 @@ func (cfg *Config) CharacterWeaponStatCtx(next http.Handler) http.Handler {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		CharacterWeaponStat, err := cfg.DB.GetCharacterWeaponStat(context.Background(), int32(CharacterWeaponID))
+		CharacterWeaponStat, err := cfg.DB.GetCharacterWeaponStat(r.Context(), int32(CharacterWeaponID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -52,7 +52,7 @@ func (cfg *Config) CreateCharacterWeaponStat(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}
-	createdCharacterWeaponStat, err := cfg.DB.CreateCharacterWeaponStat(context.Background(), database.CreateCharacterWeaponStatParams{
+	createdCharacterWeaponStat, err := cfg.DB.CreateCharacterWeaponStat(r.Context(), database.CreateCharacterWeaponStatParams{
 		Atk: params.Atk,
 		Def: params.Def,
 		Cc:  params.Cc,
@@ -69,7 +69,7 @@ func (cfg *Config) CreateCharacterWeaponStat(w http.ResponseWriter, r *http.Requ
 func (cfg *Config) GetCharacterWeaponStat(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting character weapon stat")
 	ctx := r.Context()
-	characterWeaponStat, ok := ctx.Value(CharacterWeaponStatKey).(database.CharacterWeaponStat)
+	characterWeaponStat, ok := ctx.Value(CharacterWeaponStatKey).(*database.CharacterWeaponStat)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Character weapon stat not found", nil)
 		return
@@ -79,7 +79,7 @@ func (cfg *Config) GetCharacterWeaponStat(w http.ResponseWriter, r *http.Request
 
 func (cfg *Config) ListCharacterWeaponStats(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Listing character weapon stats")
-	characterWeaponStats, err := cfg.DB.ListCharacterWeaponStats(context.Background())
+	characterWeaponStats, err := cfg.DB.ListCharacterWeaponStats(r.Context())
 	if err != nil {
 		cfg.Log.Error("Failed to list character weapon stats(ListCharacterWeaponStats Query)", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "DB error ListCharacterWeaponStats", err)
@@ -96,7 +96,7 @@ func (cfg *Config) ListCharacterWeaponStats(w http.ResponseWriter, r *http.Reque
 func (cfg *Config) PatchCharacterWeaponStat(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Patching character weapon stat")
 	ctx := r.Context()
-	characterWeaponStat, ok := ctx.Value(CharacterWeaponStatKey).(database.CharacterWeaponStat)
+	characterWeaponStat, ok := ctx.Value(CharacterWeaponStatKey).(*database.CharacterWeaponStat)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Character weapon stat not found", nil)
 		return
@@ -131,7 +131,7 @@ func (cfg *Config) PatchCharacterWeaponStat(w http.ResponseWriter, r *http.Reque
 		characterWeaponStat.Sup = params.Sup
 	}
 
-	err := cfg.DB.PatchCharacterWeaponStat(context.Background(), database.PatchCharacterWeaponStatParams{
+	err := cfg.DB.PatchCharacterWeaponStat(r.Context(), database.PatchCharacterWeaponStatParams{
 		CwID: characterWeaponStat.CwID,
 		Atk:  characterWeaponStat.Atk,
 		Def:  characterWeaponStat.Def,
@@ -150,13 +150,13 @@ func (cfg *Config) PatchCharacterWeaponStat(w http.ResponseWriter, r *http.Reque
 func (cfg *Config) DeleteCharacterWeaponStat(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Deleting character weapon stat")
 	ctx := r.Context()
-	characterWeaponStat, ok := ctx.Value(CharacterWeaponStatKey).(database.CharacterWeaponStat)
+	characterWeaponStat, ok := ctx.Value(CharacterWeaponStatKey).(*database.CharacterWeaponStat)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Character weapon stat not found", nil)
 		return
 	}
 
-	err := cfg.DB.DeleteCharacterWeaponStat(context.Background(), characterWeaponStat.CwID)
+	err := cfg.DB.DeleteCharacterWeaponStat(r.Context(), characterWeaponStat.CwID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to delete character weapon stat", err)
 		return

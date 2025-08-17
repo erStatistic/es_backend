@@ -14,13 +14,13 @@ import (
 func (cfg *Config) ClusterCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.Log.Info("ClusterCtx")
-		code := chi.URLParam(r, "code")
-		ClusterID, err := strconv.Atoi(code)
+		id := chi.URLParam(r, "clusterId")
+		ClusterID, err := strconv.Atoi(id)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		Cluster, err := cfg.DB.GetCluster(context.Background(), int32(ClusterID))
+		Cluster, err := cfg.DB.GetCluster(r.Context(), int32(ClusterID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -39,7 +39,7 @@ func (cfg *Config) ClusterCtx(next http.Handler) http.Handler {
 
 func (cfg *Config) ListClusters(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Listing clusters")
-	clusters, err := cfg.DB.ListClusters(context.Background())
+	clusters, err := cfg.DB.ListClusters(r.Context())
 	if err != nil {
 		cfg.Log.Error("Failed to list clusters(ListClusters Query)", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "DB error ListClusters", err)
@@ -56,7 +56,7 @@ func (cfg *Config) ListClusters(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) GetCluster(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting cluster")
 	ctx := r.Context()
-	cluster, ok := ctx.Value(clusterKey).(database.Cluster)
+	cluster, ok := ctx.Value(clusterKey).(*database.Cluster)
 
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Cluster not found", nil)
@@ -79,7 +79,7 @@ func (cfg *Config) CreateCluster(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}
-	createdCluster, err := cfg.DB.CreateCluster(context.Background(), database.CreateClusterParams{
+	createdCluster, err := cfg.DB.CreateCluster(r.Context(), database.CreateClusterParams{
 		Name:     params.Name,
 		ImageUrl: params.ImageUrl,
 	})
@@ -93,13 +93,13 @@ func (cfg *Config) CreateCluster(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) DeleteCluster(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Deleting cluster")
 	ctx := r.Context()
-	cluster, ok := ctx.Value(clusterKey).(database.Cluster)
+	cluster, ok := ctx.Value(clusterKey).(*database.Cluster)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Cluster not found", nil)
 		return
 	}
 
-	err := cfg.DB.DeleteCluster(context.Background(), int32(cluster.ID))
+	err := cfg.DB.DeleteCluster(r.Context(), int32(cluster.ID))
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to delete cluster", err)
 		return
@@ -110,7 +110,7 @@ func (cfg *Config) DeleteCluster(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) PatchCluster(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Patching cluster")
 	ctx := r.Context()
-	cluster, ok := ctx.Value(clusterKey).(database.Cluster)
+	cluster, ok := ctx.Value(clusterKey).(*database.Cluster)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Cluster not found", nil)
 		return
@@ -133,7 +133,7 @@ func (cfg *Config) PatchCluster(w http.ResponseWriter, r *http.Request) {
 		cluster.ImageUrl = params.ImageUrl
 	}
 
-	err := cfg.DB.PatchCluster(context.Background(), database.PatchClusterParams{
+	err := cfg.DB.PatchCluster(r.Context(), database.PatchClusterParams{
 		ID:       cluster.ID,
 		ImageUrl: cluster.ImageUrl,
 		Name:     cluster.Name,

@@ -2,8 +2,8 @@
 CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     game_code BIGINT NOT NULL UNIQUE, -- team_info.GameID
-    started_at TIMESTAMPTZ, -- 없으면 NULL
-    average_mmr INT,
+    started_at TIMESTAMPTZ DEFAULT NULL,
+    average_mmr INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

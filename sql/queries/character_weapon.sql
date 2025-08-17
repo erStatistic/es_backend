@@ -9,8 +9,7 @@ RETURNING
 -- name: DeleteCharacterWeapon :exec
 DELETE FROM character_weapons
 WHERE
-    character_id = $1
-    AND weapon_id = $2;
+    id = $1;
 
 -- name: GetCharacterWeapon :one
 SELECT
@@ -18,8 +17,7 @@ SELECT
 FROM
     character_weapons
 WHERE
-    character_id = $1
-    AND weapon_id = $2;
+    id = $1;
 
 -- name: ListCharacterWeapons :many
 SELECT
@@ -32,8 +30,9 @@ ORDER BY
 -- name: PatchCharacterWeapon :exec
 UPDATE character_weapons
 SET
-    position_id = $3,
-    cluster_id = $4
+    character_id = $2,
+    weapon_id = $3,
+    position_id = $4,
+    cluster_id = $5
 WHERE
-    character_id = $1
-    AND weapon_id = $2;
+    id = $1;

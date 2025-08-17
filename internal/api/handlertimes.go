@@ -14,13 +14,13 @@ import (
 func (cfg *Config) TimesCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.Log.Info("TimesCtx")
-		code := chi.URLParam(r, "code")
-		TimeID, err := strconv.Atoi(code)
+		id := chi.URLParam(r, "id")
+		TimeID, err := strconv.Atoi(id)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		Time, err := cfg.DB.GetTime(context.Background(), int32(TimeID))
+		Time, err := cfg.DB.GetTime(r.Context(), int32(TimeID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -39,7 +39,7 @@ func (cfg *Config) TimesCtx(next http.Handler) http.Handler {
 
 func (cfg *Config) ListTimes(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Listing times")
-	times, err := cfg.DB.ListTimes(context.Background())
+	times, err := cfg.DB.ListTimes(r.Context())
 	if err != nil {
 		cfg.Log.Error("Failed to list times(ListTimes Query)", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "DB error ListTimes", err)
@@ -55,7 +55,7 @@ func (cfg *Config) ListTimes(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) GetTime(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting time")
 	ctx := r.Context()
-	time, ok := ctx.Value(timeKey).(database.Time)
+	time, ok := ctx.Value(timeKey).(*database.Time)
 
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Time not found", nil)
@@ -81,7 +81,7 @@ func (cfg *Config) CreateTime(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}
-	createdTime, err := cfg.DB.CreateTime(context.Background(), database.CreateTimeParams{
+	createdTime, err := cfg.DB.CreateTime(r.Context(), database.CreateTimeParams{
 		No:        params.No,
 		Name:      params.Name,
 		Seconds:   params.Seconds,
@@ -98,13 +98,13 @@ func (cfg *Config) CreateTime(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) DeleteTime(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Deleting time")
 	ctx := r.Context()
-	time, ok := ctx.Value(timeKey).(database.Time)
+	time, ok := ctx.Value(timeKey).(*database.Time)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Time not found", nil)
 		return
 	}
 
-	err := cfg.DB.DeleteTime(context.Background(), int32(time.ID))
+	err := cfg.DB.DeleteTime(r.Context(), int32(time.ID))
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to delete time", err)
 		return
@@ -115,7 +115,7 @@ func (cfg *Config) DeleteTime(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) PatchTime(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Patching time")
 	ctx := r.Context()
-	time, ok := ctx.Value(timeKey).(database.Time)
+	time, ok := ctx.Value(timeKey).(*database.Time)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Time not found", nil)
 		return
@@ -146,7 +146,7 @@ func (cfg *Config) PatchTime(w http.ResponseWriter, r *http.Request) {
 		time.EndTime = params.EndTime
 	}
 
-	err := cfg.DB.PatchTime(context.Background(), database.PatchTimeParams{
+	err := cfg.DB.PatchTime(r.Context(), database.PatchTimeParams{
 		ID:        time.ID,
 		Name:      time.Name,
 		Seconds:   time.Seconds,

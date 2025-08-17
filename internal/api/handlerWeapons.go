@@ -20,7 +20,7 @@ func (cfg *Config) WeaponCtx(next http.Handler) http.Handler {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		Weapon, err := cfg.DB.GetWeapon(context.Background(), int32(WeaponID))
+		Weapon, err := cfg.DB.GetWeapon(r.Context(), int32(WeaponID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -39,7 +39,7 @@ func (cfg *Config) WeaponCtx(next http.Handler) http.Handler {
 
 func (cfg *Config) ListWeapons(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Listing weapons")
-	weapons, err := cfg.DB.ListWeapons(context.Background())
+	weapons, err := cfg.DB.ListWeapons(r.Context())
 	if err != nil {
 		cfg.Log.Error("Failed to list weapons(ListWeapons Query)", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "DB error ListWeapons", err)
@@ -55,7 +55,7 @@ func (cfg *Config) ListWeapons(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) GetWeapon(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting weapon")
 	ctx := r.Context()
-	weapon, ok := ctx.Value(weaponKey).(database.Weapon)
+	weapon, ok := ctx.Value(weaponKey).(*database.Weapon)
 
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Weapon not found", nil)
@@ -79,7 +79,7 @@ func (cfg *Config) CreateWeapon(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}
-	createdWeapon, err := cfg.DB.CreateWeapon(context.Background(), database.CreateWeaponParams{
+	createdWeapon, err := cfg.DB.CreateWeapon(r.Context(), database.CreateWeaponParams{
 		Code:     params.Code,
 		ImageUrl: params.ImageUrl,
 		NameKr:   params.NameKr,
@@ -94,13 +94,13 @@ func (cfg *Config) CreateWeapon(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) DeleteWeapon(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Deleting weapon")
 	ctx := r.Context()
-	weapon, ok := ctx.Value(weaponKey).(database.Weapon)
+	weapon, ok := ctx.Value(weaponKey).(*database.Weapon)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Weapon not found", nil)
 		return
 	}
 
-	err := cfg.DB.DeleteWeapon(context.Background(), int32(weapon.Code))
+	err := cfg.DB.DeleteWeapon(r.Context(), int32(weapon.Code))
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to delete weapon", err)
 		return
@@ -111,7 +111,7 @@ func (cfg *Config) DeleteWeapon(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) PatchWeapon(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Patching weapon")
 	ctx := r.Context()
-	weapon, ok := ctx.Value(weaponKey).(database.Weapon)
+	weapon, ok := ctx.Value(weaponKey).(*database.Weapon)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Weapon not found", nil)
 		return
@@ -134,7 +134,7 @@ func (cfg *Config) PatchWeapon(w http.ResponseWriter, r *http.Request) {
 		weapon.ImageUrl = params.ImageUrl
 	}
 
-	err := cfg.DB.PatchWeapon(context.Background(), database.PatchWeaponParams{
+	err := cfg.DB.PatchWeapon(r.Context(), database.PatchWeaponParams{
 		Code:     weapon.Code,
 		ImageUrl: weapon.ImageUrl,
 		NameKr:   weapon.NameKr,

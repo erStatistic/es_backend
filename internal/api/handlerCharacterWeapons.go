@@ -14,16 +14,13 @@ import (
 func (cfg *Config) CharacterWeaponCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.Log.Info("CharacterWeaponCtx")
-		id := chi.URLParam(r, "id")
+		id := chi.URLParam(r, "cwId")
 		CharacterWeaponID, err := strconv.Atoi(id)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		CharacterWeapon, err := cfg.DB.GetCharacterWeapon(context.Background(), database.GetCharacterWeaponParams{
-			CharacterID: int32(CharacterWeaponID),
-			WeaponID:    int32(CharacterWeaponID),
-		})
+		CharacterWeapon, err := cfg.DB.GetCharacterWeapon(r.Context(), int32(CharacterWeaponID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -42,7 +39,7 @@ func (cfg *Config) CharacterWeaponCtx(next http.Handler) http.Handler {
 
 func (cfg *Config) ListCharacterWeapons(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Listing character weapons")
-	characterWeapons, err := cfg.DB.ListCharacterWeapons(context.Background())
+	characterWeapons, err := cfg.DB.ListCharacterWeapons(r.Context())
 	if err != nil {
 		cfg.Log.Error("Failed to list character weapons(ListCharacterWeapons Query)", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "DB error ListCharacterWeapons", err)
@@ -58,7 +55,7 @@ func (cfg *Config) ListCharacterWeapons(w http.ResponseWriter, r *http.Request) 
 func (cfg *Config) GetCharacterWeapon(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting character weapon")
 	ctx := r.Context()
-	characterWeapon, ok := ctx.Value(characterWeaponKey).(database.CharacterWeapon)
+	characterWeapon, ok := ctx.Value(characterWeaponKey).(*database.CharacterWeapon)
 
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Character weapon not found", nil)
@@ -83,7 +80,7 @@ func (cfg *Config) CreateCharacterWeapon(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}
-	createdCharacterWeapon, err := cfg.DB.CreateCharacterWeapon(context.Background(), database.CreateCharacterWeaponParams{
+	createdCharacterWeapon, err := cfg.DB.CreateCharacterWeapon(r.Context(), database.CreateCharacterWeaponParams{
 		CharacterID: params.CharacterID,
 		WeaponID:    params.WeaponID,
 		PositionID:  params.PositionID,
@@ -99,16 +96,13 @@ func (cfg *Config) CreateCharacterWeapon(w http.ResponseWriter, r *http.Request)
 func (cfg *Config) DeleteCharacterWeapon(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Deleting character weapon")
 	ctx := r.Context()
-	characterWeapon, ok := ctx.Value(characterWeaponKey).(database.CharacterWeapon)
+	characterWeapon, ok := ctx.Value(characterWeaponKey).(*database.CharacterWeapon)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Character weapon not found", nil)
 		return
 	}
 
-	err := cfg.DB.DeleteCharacterWeapon(context.Background(), database.DeleteCharacterWeaponParams{
-		CharacterID: characterWeapon.CharacterID,
-		WeaponID:    characterWeapon.WeaponID,
-	})
+	err := cfg.DB.DeleteCharacterWeapon(r.Context(), int32(characterWeapon.ID))
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to delete character weapon", err)
 		return
@@ -119,7 +113,7 @@ func (cfg *Config) DeleteCharacterWeapon(w http.ResponseWriter, r *http.Request)
 func (cfg *Config) PatchCharacterWeapon(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Patching character weapon")
 	ctx := r.Context()
-	characterWeapon, ok := ctx.Value(characterWeaponKey).(database.CharacterWeapon)
+	characterWeapon, ok := ctx.Value(characterWeaponKey).(*database.CharacterWeapon)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Character weapon not found", nil)
 		return
@@ -142,7 +136,7 @@ func (cfg *Config) PatchCharacterWeapon(w http.ResponseWriter, r *http.Request) 
 		characterWeapon.ClusterID = params.ClusterID
 	}
 
-	err := cfg.DB.PatchCharacterWeapon(context.Background(), database.PatchCharacterWeaponParams{
+	err := cfg.DB.PatchCharacterWeapon(r.Context(), database.PatchCharacterWeaponParams{
 		CharacterID: characterWeapon.CharacterID,
 		PositionID:  characterWeapon.PositionID,
 		ClusterID:   characterWeapon.ClusterID,

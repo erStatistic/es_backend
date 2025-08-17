@@ -51,7 +51,7 @@ type Game struct {
 	ID         int32
 	GameCode   int64
 	StartedAt  sql.NullTime
-	AverageMmr sql.NullInt32
+	AverageMmr int32
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

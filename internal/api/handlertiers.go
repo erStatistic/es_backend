@@ -14,13 +14,13 @@ import (
 func (cfg *Config) TierCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.Log.Info("TierCtx")
-		code := chi.URLParam(r, "code")
-		TierID, err := strconv.Atoi(code)
+		id := chi.URLParam(r, "tierId")
+		TierID, err := strconv.Atoi(id)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		Tier, err := cfg.DB.GetTier(context.Background(), int32(TierID))
+		Tier, err := cfg.DB.GetTier(r.Context(), int32(TierID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -39,7 +39,7 @@ func (cfg *Config) TierCtx(next http.Handler) http.Handler {
 
 func (cfg *Config) ListTiers(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Listing tiers")
-	tiers, err := cfg.DB.ListTiers(context.Background())
+	tiers, err := cfg.DB.ListTiers(r.Context())
 	if err != nil {
 		cfg.Log.Error("Failed to list tiers(ListTiers Query)", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "DB error ListTiers", err)
@@ -55,7 +55,7 @@ func (cfg *Config) ListTiers(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) GetTier(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting tier")
 	ctx := r.Context()
-	tier, ok := ctx.Value(tierKey).(database.Tier)
+	tier, ok := ctx.Value(tierKey).(*database.Tier)
 
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Tier not found", nil)
@@ -79,7 +79,7 @@ func (cfg *Config) CreateTier(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}
-	createdTier, err := cfg.DB.CreateTier(context.Background(), database.CreateTierParams{
+	createdTier, err := cfg.DB.CreateTier(r.Context(), database.CreateTierParams{
 		ImageUrl: params.ImageUrl,
 		Name:     params.Name,
 		Mmr:      params.Mmr,
@@ -94,13 +94,13 @@ func (cfg *Config) CreateTier(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) DeleteTier(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Deleting tier")
 	ctx := r.Context()
-	tier, ok := ctx.Value(tierKey).(database.Tier)
+	tier, ok := ctx.Value(tierKey).(*database.Tier)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Tier not found", nil)
 		return
 	}
 
-	err := cfg.DB.DeleteTier(context.Background(), int32(tier.ID))
+	err := cfg.DB.DeleteTier(r.Context(), int32(tier.ID))
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to delete tier", err)
 		return
@@ -111,7 +111,7 @@ func (cfg *Config) DeleteTier(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) PatchTier(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Patching tier")
 	ctx := r.Context()
-	tier, ok := ctx.Value(tierKey).(database.Tier)
+	tier, ok := ctx.Value(tierKey).(*database.Tier)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Tier not found", nil)
 		return
@@ -138,7 +138,7 @@ func (cfg *Config) PatchTier(w http.ResponseWriter, r *http.Request) {
 		tier.Mmr = params.Mmr
 	}
 
-	err := cfg.DB.PatchTier(context.Background(), database.PatchTierParams{
+	err := cfg.DB.PatchTier(r.Context(), database.PatchTierParams{
 		ID:       tier.ID,
 		ImageUrl: tier.ImageUrl,
 		Name:     tier.Name,
