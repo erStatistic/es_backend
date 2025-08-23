@@ -33,7 +33,7 @@ func (cfg *Config) GameCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), GameKey, Game)
+		ctx := context.WithValue(r.Context(), GameKey, &Game)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

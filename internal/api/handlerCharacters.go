@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -32,7 +33,7 @@ func (cfg *Config) CharacterCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), characterKey, Character)
+		ctx := context.WithValue(r.Context(), characterKey, &Character)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -57,6 +58,7 @@ func (cfg *Config) GetCharacter(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	character, ok := ctx.Value(characterKey).(*database.Character)
 
+	fmt.Println(character)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Character not found", nil)
 		return

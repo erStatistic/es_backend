@@ -32,7 +32,7 @@ func (cfg *Config) TimesCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), timeKey, Time)
+		ctx := context.WithValue(r.Context(), timeKey, &Time)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

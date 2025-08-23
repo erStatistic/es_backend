@@ -32,7 +32,7 @@ func (cfg *Config) TierCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), tierKey, Tier)
+		ctx := context.WithValue(r.Context(), tierKey, &Tier)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

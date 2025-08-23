@@ -26,7 +26,7 @@ func (cfg *Config) GameTeamCWCtx(next http.Handler) http.Handler {
 			respondWithError(w, http.StatusNotFound, "GameTeamCW not found", err)
 			return
 		}
-		ctx := context.WithValue(r.Context(), GameTeamCWKey, gameteamCw)
+		ctx := context.WithValue(r.Context(), GameTeamCWKey, &gameteamCw)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

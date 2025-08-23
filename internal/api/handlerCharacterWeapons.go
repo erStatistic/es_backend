@@ -32,7 +32,7 @@ func (cfg *Config) CharacterWeaponCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), characterWeaponKey, CharacterWeapon)
+		ctx := context.WithValue(r.Context(), characterWeaponKey, &CharacterWeapon)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

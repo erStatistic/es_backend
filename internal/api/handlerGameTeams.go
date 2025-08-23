@@ -40,7 +40,7 @@ func (cfg *Config) GameTeamCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), GameTeamKey, GameTeam)
+		ctx := context.WithValue(r.Context(), GameTeamKey, &GameTeam)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -190,19 +190,32 @@ func (cfg *Config) DeleteGameTeam(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, "Game team deleted", nil)
 }
 
+func (cfg *Config) GameRankCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.Log.Info("GameRankCtx")
+		rank, err := strconv.Atoi(chi.URLParam(r, "rank"))
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
+			return
+		}
+		GameTeams, err := cfg.DB.GetListGameTeamsByGameRank(r.Context(), int32(rank))
+		if err != nil {
+			cfg.Log.Error("Failed to list game teams(ListGameTeamsByGameRank Query)", "error", err)
+			respondWithError(w, http.StatusInternalServerError, "DB error ListGameTeamsByGameRank", err)
+			return
+		}
+		ctx := context.WithValue(r.Context(), GameTeamKey, &GameTeams)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func (cfg *Config) GetListGameRank(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting list game rank")
-	rank, err := strconv.Atoi(chi.URLParam(r, "rank"))
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
-		return
-	}
-	gameTeams, err := cfg.DB.GetListGameTeamsByGameRank(r.Context(), int32(rank))
-	if err != nil {
-		cfg.Log.Error("Failed to list game teams(ListGameTeamsByGameRank Query)", "error", err)
-		respondWithError(w, http.StatusInternalServerError, "DB error ListGameTeamsByGameRank", err)
+	ctx := r.Context()
+	gameTeams, ok := ctx.Value(GameTeamKey).([]database.GameTeam)
+	if !ok {
+		respondWithError(w, http.StatusUnprocessableEntity, "Game team not found", nil)
 		return
 	}
 	respondWithJson(w, http.StatusOK, "Game teams by game rank retrieved", Map(gameTeams, toGameTeamDTO))
-
 }

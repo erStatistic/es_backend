@@ -97,8 +97,11 @@ func (cfg *Config) Routes() http.Handler {
 		r.Route("/games", func(r chi.Router) {
 			r.Get("/", cfg.ListGames)
 			r.Post("/", cfg.CreateGame)
-			r.Route("/{rank}", func(r chi.Router) {
-				r.Get("/", cfg.GetListGameRank)
+			r.Route("/ranks", func(r chi.Router) {
+				r.Route("/{rank}", func(r chi.Router) {
+					r.Use(cfg.GameRankCtx)
+					r.Get("/", cfg.GetListGameRank)
+				})
 			})
 			r.Route("/{gameCode}", func(r chi.Router) {
 				r.Use(cfg.GameCtx)

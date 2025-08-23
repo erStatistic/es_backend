@@ -32,7 +32,7 @@ func (cfg *Config) ClusterCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), clusterKey, Cluster)
+		ctx := context.WithValue(r.Context(), clusterKey, &Cluster)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

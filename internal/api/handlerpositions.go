@@ -32,7 +32,7 @@ func (cfg *Config) PositionCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), positionKey, Position)
+		ctx := context.WithValue(r.Context(), positionKey, &Position)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
