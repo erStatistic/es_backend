@@ -1,0 +1,282 @@
+{
+    "code": 200,
+    "msg": "CW entries by cluster retrieved",
+    "data": {
+        "clusterId": 1,
+        "label": "A",
+        "entries": [
+            {
+                "cwId": 55,
+                "character": {
+                    "id": 33,
+                    "name": "니키",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F033.%20Nicky%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 1,
+                    "name": "글러브",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F01.%20Glove.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 22,
+                "character": {
+                    "id": 10,
+                    "name": "리다이린",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F010.%20Li%20Dailin%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 1,
+                    "name": "글러브",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F01.%20Glove.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 23,
+                "character": {
+                    "id": 10,
+                    "name": "리다이린",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F010.%20Li%20Dailin%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 19,
+                    "name": "쌍절곤",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F19.%20Nunchaku.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 11,
+                "character": {
+                    "id": 4,
+                    "name": "매그너스",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F004.%20Magnus%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 3,
+                    "name": "방망이",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F03.%20Bat.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 91,
+                "character": {
+                    "id": 64,
+                    "name": "바냐",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F064.%20Vanya%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 23,
+                    "name": "아르카나",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F23.%20Arcana.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 66,
+                "character": {
+                    "id": 42,
+                    "name": "비앙카",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F042.%20Bianca%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 23,
+                    "name": "아르카나",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F23.%20Arcana.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 86,
+                "character": {
+                    "id": 59,
+                    "name": "아이작",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F059.%20Isaac%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 2,
+                    "name": "톤파",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F02.%20Tonfa.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 58,
+                "character": {
+                    "id": 35,
+                    "name": "얀",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F035.%20Jan%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 2,
+                    "name": "톤파",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F02.%20Tonfa.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 25,
+                "character": {
+                    "id": 11,
+                    "name": "유키",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F011.%20Yuki%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 17,
+                    "name": "쌍검",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F17.%20Dual%20Sword.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 90,
+                "character": {
+                    "id": 63,
+                    "name": "이안",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F063.%20Ly%20anh%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 14,
+                    "name": "단검",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F14.%20Dagger.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 98,
+                "character": {
+                    "id": 71,
+                    "name": "케네스",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F071.%20Kenneth%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 13,
+                    "name": "도끼",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F13.%20Axe.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 30,
+                "character": {
+                    "id": 14,
+                    "name": "키아라",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F014.%20Chiara%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 20,
+                    "name": "레이피어",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F20.%20Rapier.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 10,
+                "character": {
+                    "id": 3,
+                    "name": "피오라",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F003.%20Fiora%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 20,
+                    "name": "레이피어",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F20.%20Rapier.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 8,
+                "character": {
+                    "id": 3,
+                    "name": "피오라",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F003.%20Fiora%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 15,
+                    "name": "양손검",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F15.%20Twohanded%20Sword.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 9,
+                "character": {
+                    "id": 3,
+                    "name": "피오라",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F003.%20Fiora%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 18,
+                    "name": "창",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F18.%20Spear.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            },
+            {
+                "cwId": 18,
+                "character": {
+                    "id": 7,
+                    "name": "현우",
+                    "imageUrl": "http://localhost:9000/eternalreturn/characters%2F007.%20Hyunwoo%2Fdefault%2FMini.png"
+                },
+                "weapon": {
+                    "code": 2,
+                    "name": "톤파",
+                    "imageUrl": "http://localhost:9000/eternalreturn/weaponIcons%2F02.%20Tonfa.png"
+                },
+                "position": {
+                    "id": 3,
+                    "name": "딜 브루저"
+                }
+            }
+        ]
+    }
+}

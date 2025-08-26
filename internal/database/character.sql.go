@@ -11,27 +11,27 @@ import (
 
 const createCharacter = `-- name: CreateCharacter :one
 INSERT INTO
-    characters (code, image_url, name_kr)
+    characters (image_url_mini, image_url_full, name_kr)
 VALUES
     ($1, $2, $3)
 RETURNING
-    id, code, name_kr, image_url, created_at, updated_at
+    id, name_kr, image_url_mini, image_url_full, created_at, updated_at
 `
 
 type CreateCharacterParams struct {
-	Code     int32
-	ImageUrl string
-	NameKr   string
+	ImageUrlMini string
+	ImageUrlFull string
+	NameKr       string
 }
 
 func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams) (Character, error) {
-	row := q.db.QueryRowContext(ctx, createCharacter, arg.Code, arg.ImageUrl, arg.NameKr)
+	row := q.db.QueryRowContext(ctx, createCharacter, arg.ImageUrlMini, arg.ImageUrlFull, arg.NameKr)
 	var i Character
 	err := row.Scan(
 		&i.ID,
-		&i.Code,
 		&i.NameKr,
-		&i.ImageUrl,
+		&i.ImageUrlMini,
+		&i.ImageUrlFull,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -41,31 +41,31 @@ func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams
 const deleteCharacter = `-- name: DeleteCharacter :exec
 DELETE FROM characters
 WHERE
-    code = $1
+    id = $1
 `
 
-func (q *Queries) DeleteCharacter(ctx context.Context, code int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCharacter, code)
+func (q *Queries) DeleteCharacter(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteCharacter, id)
 	return err
 }
 
 const getCharacter = `-- name: GetCharacter :one
 SELECT
-    id, code, name_kr, image_url, created_at, updated_at
+    id, name_kr, image_url_mini, image_url_full, created_at, updated_at
 FROM
     characters
 WHERE
-    code = $1
+    id = $1
 `
 
-func (q *Queries) GetCharacter(ctx context.Context, code int32) (Character, error) {
-	row := q.db.QueryRowContext(ctx, getCharacter, code)
+func (q *Queries) GetCharacter(ctx context.Context, id int32) (Character, error) {
+	row := q.db.QueryRowContext(ctx, getCharacter, id)
 	var i Character
 	err := row.Scan(
 		&i.ID,
-		&i.Code,
 		&i.NameKr,
-		&i.ImageUrl,
+		&i.ImageUrlMini,
+		&i.ImageUrlFull,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -74,11 +74,11 @@ func (q *Queries) GetCharacter(ctx context.Context, code int32) (Character, erro
 
 const listCharacters = `-- name: ListCharacters :many
 SELECT
-    id, code, name_kr, image_url, created_at, updated_at
+    id, name_kr, image_url_mini, image_url_full, created_at, updated_at
 FROM
     characters
 ORDER BY
-    code ASC
+    id ASC
 `
 
 func (q *Queries) ListCharacters(ctx context.Context) ([]Character, error) {
@@ -92,9 +92,9 @@ func (q *Queries) ListCharacters(ctx context.Context) ([]Character, error) {
 		var i Character
 		if err := rows.Scan(
 			&i.ID,
-			&i.Code,
 			&i.NameKr,
-			&i.ImageUrl,
+			&i.ImageUrlMini,
+			&i.ImageUrlFull,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -114,19 +114,26 @@ func (q *Queries) ListCharacters(ctx context.Context) ([]Character, error) {
 const patchCharacter = `-- name: PatchCharacter :exec
 UPDATE characters
 SET
-    image_url = $2,
-    name_kr = $3
+    image_url_mini = $2,
+    image_url_full = $3,
+    name_kr = $4
 WHERE
-    code = $1
+    id = $1
 `
 
 type PatchCharacterParams struct {
-	Code     int32
-	ImageUrl string
-	NameKr   string
+	ID           int32
+	ImageUrlMini string
+	ImageUrlFull string
+	NameKr       string
 }
 
 func (q *Queries) PatchCharacter(ctx context.Context, arg PatchCharacterParams) error {
-	_, err := q.db.ExecContext(ctx, patchCharacter, arg.Code, arg.ImageUrl, arg.NameKr)
+	_, err := q.db.ExecContext(ctx, patchCharacter,
+		arg.ID,
+		arg.ImageUrlMini,
+		arg.ImageUrlFull,
+		arg.NameKr,
+	)
 	return err
 }

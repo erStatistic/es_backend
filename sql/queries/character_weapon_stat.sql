@@ -1,17 +1,8 @@
 -- name: CreateCharacterWeaponStat :one
 INSERT INTO
-    character_weapon_stats (
-        cw_id,
-        atk,
-        def,
-        cc,
-        spd,
-        sup,
-        created_at,
-        updated_at
-    )
+    character_weapon_stats (cw_id, atk, def, cc, spd, sup)
 VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8)
+    ($1, $2, $3, $4, $5, $6)
 RETURNING
     *;
 

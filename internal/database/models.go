@@ -10,12 +10,12 @@ import (
 )
 
 type Character struct {
-	ID        int32
-	Code      int32
-	NameKr    string
-	ImageUrl  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID           int32
+	NameKr       string
+	ImageUrlMini string
+	ImageUrlFull string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 type CharacterWeapon struct {

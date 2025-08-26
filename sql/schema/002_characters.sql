@@ -1,9 +1,9 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS characters (
     id SERIAL PRIMARY KEY,
-    code INT NOT NULL UNIQUE,
     name_kr VARCHAR(255) NOT NULL,
-    image_url VARCHAR(255) NOT NULL DEFAULT '',
+    image_url_mini VARCHAR(255) NOT NULL DEFAULT '',
+    image_url_full VARCHAR(255) NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -14,13 +15,14 @@ import (
 func (cfg *Config) CharacterWeaponStatCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.Log.Info("CharacterWeaponStatCtx")
-		id := chi.URLParam(r, "id")
+		id := chi.URLParam(r, "cwId")
 		CharacterWeaponID, err := strconv.Atoi(id)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
 		CharacterWeaponStat, err := cfg.DB.GetCharacterWeaponStat(r.Context(), int32(CharacterWeaponID))
+		fmt.Println(CharacterWeaponStat)
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -32,7 +34,7 @@ func (cfg *Config) CharacterWeaponStatCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), CharacterWeaponStatKey, CharacterWeaponStat)
+		ctx := context.WithValue(r.Context(), CharacterWeaponStatKey, &CharacterWeaponStat)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -40,6 +42,7 @@ func (cfg *Config) CharacterWeaponStatCtx(next http.Handler) http.Handler {
 func (cfg *Config) CreateCharacterWeaponStat(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating character weapon stat")
 	type parameters struct {
+		ID  int32 `json:"id"`
 		Atk int32 `json:"atk"`
 		Def int32 `json:"def"`
 		Cc  int32 `json:"cc"`
@@ -53,11 +56,12 @@ func (cfg *Config) CreateCharacterWeaponStat(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	createdCharacterWeaponStat, err := cfg.DB.CreateCharacterWeaponStat(r.Context(), database.CreateCharacterWeaponStatParams{
-		Atk: params.Atk,
-		Def: params.Def,
-		Cc:  params.Cc,
-		Spd: params.Spd,
-		Sup: params.Sup,
+		CwID: params.ID,
+		Atk:  params.Atk,
+		Def:  params.Def,
+		Cc:   params.Cc,
+		Spd:  params.Spd,
+		Sup:  params.Sup,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create character weapon stat", err)
@@ -151,6 +155,7 @@ func (cfg *Config) DeleteCharacterWeaponStat(w http.ResponseWriter, r *http.Requ
 	cfg.Log.Info("Deleting character weapon stat")
 	ctx := r.Context()
 	characterWeaponStat, ok := ctx.Value(CharacterWeaponStatKey).(*database.CharacterWeaponStat)
+	fmt.Println(characterWeaponStat)
 	if !ok {
 		respondWithError(w, http.StatusUnprocessableEntity, "Character weapon stat not found", nil)
 		return

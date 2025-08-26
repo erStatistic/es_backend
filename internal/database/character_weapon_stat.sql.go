@@ -7,36 +7,24 @@ package database
 
 import (
 	"context"
-	"time"
 )
 
 const createCharacterWeaponStat = `-- name: CreateCharacterWeaponStat :one
 INSERT INTO
-    character_weapon_stats (
-        cw_id,
-        atk,
-        def,
-        cc,
-        spd,
-        sup,
-        created_at,
-        updated_at
-    )
+    character_weapon_stats (cw_id, atk, def, cc, spd, sup)
 VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8)
+    ($1, $2, $3, $4, $5, $6)
 RETURNING
     cw_id, atk, def, cc, spd, sup, created_at, updated_at
 `
 
 type CreateCharacterWeaponStatParams struct {
-	CwID      int32
-	Atk       int32
-	Def       int32
-	Cc        int32
-	Spd       int32
-	Sup       int32
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CwID int32
+	Atk  int32
+	Def  int32
+	Cc   int32
+	Spd  int32
+	Sup  int32
 }
 
 func (q *Queries) CreateCharacterWeaponStat(ctx context.Context, arg CreateCharacterWeaponStatParams) (CharacterWeaponStat, error) {
@@ -47,8 +35,6 @@ func (q *Queries) CreateCharacterWeaponStat(ctx context.Context, arg CreateChara
 		arg.Cc,
 		arg.Spd,
 		arg.Sup,
-		arg.CreatedAt,
-		arg.UpdatedAt,
 	)
 	var i CharacterWeaponStat
 	err := row.Scan(

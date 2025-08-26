@@ -71,10 +71,9 @@ func (cfg *Config) CreateCharacter(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating character")
 
 	type parameters struct {
-		Code         int32  `json:"code"`
-		NameKr       string `json:"nameKr"`
-		ImageUrlMini string `json:"imageUrlMini"`
-		ImageUrlFull string `json:"imageUrlFull"`
+		Code     int32  `json:"code"`
+		NameKr   string `json:"nameKr"`
+		ImageUrl string `json:"imageUrl"`
 	}
 
 	params := parameters{}
@@ -83,8 +82,8 @@ func (cfg *Config) CreateCharacter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	createdCharacter, err := cfg.DB.CreateCharacter(r.Context(), database.CreateCharacterParams{
-		ImageUrlMini: params.ImageUrlMini,
-		ImageUrlFull: params.ImageUrlFull,
+		ImageUrlMini: params.ImageUrl,
+		ImageUrlFull: params.ImageUrl,
 		NameKr:       params.NameKr,
 	})
 	if err != nil {
@@ -152,43 +151,4 @@ func (cfg *Config) PatchCharacter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJson(w, http.StatusOK, "Character patched", character)
-}
-func (cfg *Config) ListCwsByCharacter(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "characterId")
-	id64, err := strconv.ParseInt(idStr, 10, 32)
-	if err != nil || id64 <= 0 {
-		respondWithError(w, http.StatusBadRequest, "invalid character id", err)
-		return
-	}
-	cid := int32(id64)
-
-	rows, err := cfg.DB.ListCwsByCharacterID(r.Context(), cid)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			respondWithJson(w, http.StatusOK, "no cw for character", []any{})
-			return
-		}
-		respondWithError(w, http.StatusInternalServerError, "DB error ListCwsByCharacterID", err)
-		return
-	}
-
-	type Tab struct {
-		CwID   int32 `json:"cwId"`
-		Weapon struct {
-			Code     int32  `json:"code"`
-			Name     string `json:"name"`
-			ImageURL string `json:"imageUrl,omitempty"`
-		} `json:"weapon"`
-	}
-	out := make([]Tab, 0, len(rows))
-	for _, r := range rows {
-		t := Tab{CwID: r.CwID}
-		t.Weapon.Code = r.WeaponCode
-		t.Weapon.Name = r.WeaponName
-		t.Weapon.ImageURL = r.WeaponImageUrl
-		out = append(out, t)
-	}
-
-	w.Header().Set("Cache-Control", "public, max-age=120")
-	respondWithJson(w, http.StatusOK, "CW tabs retrieved", out)
 }

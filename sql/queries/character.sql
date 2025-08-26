@@ -1,6 +1,6 @@
 -- name: CreateCharacter :one
 INSERT INTO
-    characters (code, image_url, name_kr)
+    characters (image_url_mini, image_url_full, name_kr)
 VALUES
     ($1, $2, $3)
 RETURNING
@@ -12,7 +12,7 @@ SELECT
 FROM
     characters
 ORDER BY
-    code ASC;
+    id ASC;
 
 -- name: GetCharacter :one
 SELECT
@@ -20,17 +20,18 @@ SELECT
 FROM
     characters
 WHERE
-    code = $1;
+    id = $1;
 
 -- name: DeleteCharacter :exec
 DELETE FROM characters
 WHERE
-    code = $1;
+    id = $1;
 
 -- name: PatchCharacter :exec
 UPDATE characters
 SET
-    image_url = $2,
-    name_kr = $3
+    image_url_mini = $2,
+    image_url_full = $3,
+    name_kr = $4
 WHERE
-    code = $1;
+    id = $1;

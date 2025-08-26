@@ -16,11 +16,12 @@ func (cfg *Config) Routes() http.Handler {
 			r.Get("/", cfg.ListCharacters)
 			r.Post("/", cfg.CreateCharacter)
 
-			r.Route("/{code}", func(r chi.Router) {
+			r.Route("/{characterId}", func(r chi.Router) {
 				r.Use(cfg.CharacterCtx)
 				r.Get("/", cfg.GetCharacter)
 				r.Patch("/", cfg.PatchCharacter)
 				r.Delete("/", cfg.DeleteCharacter)
+				r.Get("/cws", cfg.ListCwsByCharacter)
 			})
 		})
 		r.Route("/weapons", func(r chi.Router) {
@@ -79,19 +80,24 @@ func (cfg *Config) Routes() http.Handler {
 		r.Route("/cws", func(r chi.Router) {
 			r.Get("/", cfg.ListCharacterWeapons)
 			r.Post("/", cfg.CreateCharacterWeapon)
-			r.Get("/stats", cfg.ListCharacterWeaponStats)
+			r.Get("/directory", cfg.ListCwDirectoryByCluster)
+			r.Get("/by-cluster/{clusterId}", cfg.ListCwEntriesByCluster)
 			r.Route("/{cwId}", func(r chi.Router) {
 				r.Use(cfg.CharacterWeaponCtx)
 				r.Get("/", cfg.GetCharacterWeapon)
 				r.Patch("/", cfg.PatchCharacterWeapon)
 				r.Delete("/", cfg.DeleteCharacterWeapon)
-				r.Route("/stats", func(r chi.Router) {
-					r.Use(cfg.CharacterWeaponStatCtx)
-					r.Post("/", cfg.CreateCharacterWeaponStat)
-					r.Get("/", cfg.GetCharacterWeaponStat)
-					r.Patch("/", cfg.PatchCharacterWeaponStat)
-					r.Delete("/", cfg.DeleteCharacterWeaponStat)
-				})
+				r.Get("/overview", cfg.GetCwOverview)
+			})
+		})
+		r.Route("/cw-stats", func(r chi.Router) {
+			r.Get("/", cfg.ListCharacterWeaponStats)
+			r.Post("/", cfg.CreateCharacterWeaponStat)
+			r.Route("/{cwId}", func(r chi.Router) {
+				r.Use(cfg.CharacterWeaponStatCtx)
+				r.Get("/", cfg.GetCharacterWeaponStat)
+				r.Patch("/", cfg.PatchCharacterWeaponStat)
+				r.Delete("/", cfg.DeleteCharacterWeaponStat)
 			})
 		})
 		r.Route("/games", func(r chi.Router) {
