@@ -319,6 +319,11 @@ type cwOverviewResp struct {
 		Name string `json:"name"`
 	} `json:"position,omitempty"`
 
+	Cluster *struct {
+		ID   int32  `json:"id"`
+		Name string `json:"name"`
+	} `json:"cluster,omitempty"`
+
 	Overview struct {
 		// summary는 아직 집계테이블 없으니 일단 스텁(0 / 빈배열)
 		Summary struct {
@@ -404,6 +409,14 @@ func (cfg *Config) GetCwOverview(w http.ResponseWriter, r *http.Request) {
 	}{
 		ID:   ident.PID,
 		Name: ident.PName,
+	}
+
+	out.Cluster = &struct {
+		ID   int32  `json:"id"`
+		Name string `json:"name"`
+	}{
+		ID:   ident.ClusterID,
+		Name: ident.ClusterName,
 	}
 
 	// summary 스텁(집계 테이블 생기면 교체)

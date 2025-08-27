@@ -144,11 +144,14 @@ SELECT
     w.name_kr AS w_name,
     COALESCE(w.image_url, '') AS w_img,
     p.id AS p_id,
-    p.name AS p_name
+    p.name AS p_name,
+    cu.id AS cluster_id,
+    cu.name AS cluster_name
 FROM
     character_weapons cw
     JOIN characters c ON c.id = cw.character_id
     JOIN weapons w ON w.code = cw.weapon_id
     JOIN positions p ON p.id = cw.position_id
+    JOIN clusters cu ON cu.id = cw.cluster_id
 WHERE
     cw.id = $1;
