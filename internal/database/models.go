@@ -58,7 +58,7 @@ type Game struct {
 
 type GameTeam struct {
 	ID             int32
-	GameID         int32
+	GameID         int64
 	TeamID         int32
 	GameRank       int32
 	TeamKills      int32
@@ -105,6 +105,33 @@ type Time struct {
 	EndTime   int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type User struct {
+	ID        int32
+	Nickname  string
+	UserNum   int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type UserRoute struct {
+	ID          int32
+	RouteID     int32
+	Title       string
+	WeaponID    int32
+	CharacterID int32
+	Count       int32
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type UserStat struct {
+	ID          int32
+	UserID      int32
+	CharacterID int32
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Weapon struct {

@@ -12,21 +12,20 @@ import (
 
 const createGame = `-- name: CreateGame :one
 INSERT INTO
-    games (game_code, started_at, average_mmr)
+    games (game_code, average_mmr)
 VALUES
-    ($1, $2, $3)
+    ($1, $2)
 RETURNING
     id, game_code, started_at, average_mmr, created_at, updated_at
 `
 
 type CreateGameParams struct {
 	GameCode   int64
-	StartedAt  sql.NullTime
 	AverageMmr int32
 }
 
 func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, error) {
-	row := q.db.QueryRowContext(ctx, createGame, arg.GameCode, arg.StartedAt, arg.AverageMmr)
+	row := q.db.QueryRowContext(ctx, createGame, arg.GameCode, arg.AverageMmr)
 	var i Game
 	err := row.Scan(
 		&i.ID,

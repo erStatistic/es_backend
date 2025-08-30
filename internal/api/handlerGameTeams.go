@@ -26,7 +26,7 @@ func (cfg *Config) GameTeamCtx(next http.Handler) http.Handler {
 			return
 		}
 		GameTeam, err := cfg.DB.GetGameTeam(r.Context(), database.GetGameTeamParams{
-			GameID: int32(GameID),
+			GameID: int64(GameID),
 			TeamID: int32(TeamID),
 		})
 		if err != nil {
@@ -48,7 +48,7 @@ func (cfg *Config) GameTeamCtx(next http.Handler) http.Handler {
 func (cfg *Config) CreateGameTeam(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating game team")
 	type parameters struct {
-		GameID         int32 `json:"gameId"`
+		GameID         int64 `json:"gameId"`
 		TeamID         int32 `json:"teamId"`
 		GameRank       int32 `json:"gameRank"`
 		TeamKills      int32 `json:"teamKills"`
@@ -114,7 +114,7 @@ func (cfg *Config) PatchGameTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type parameters struct {
-		GameID         int32 `json:"gameId"`
+		GameID         int64 `json:"gameId"`
 		TeamID         int32 `json:"teamId"`
 		GameRank       int32 `json:"gameRank"`
 		TeamKills      int32 `json:"teamKills"`

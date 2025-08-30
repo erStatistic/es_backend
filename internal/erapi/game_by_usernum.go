@@ -10,6 +10,7 @@ import (
 
 func (c *Client) GameByUserNum(usernum int, page *int) ([]UserGame, *int, error) {
 	url := fmt.Sprintf("%s/user/games/%d", baseURLv1, usernum)
+	fmt.Println(url)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

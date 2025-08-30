@@ -41,9 +41,8 @@ func (cfg *Config) GameCtx(next http.Handler) http.Handler {
 func (cfg *Config) CreateGame(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating game")
 	type parameters struct {
-		GameCode   int64     `json:"game_code"`
-		StartedAt  time.Time `json:"started_at"`
-		AverageMmr int32     `json:"average_mmr"`
+		GameCode   int64 `json:"game_code"`
+		AverageMmr int32 `json:"average_mmr"`
 	}
 
 	params := parameters{}
@@ -52,17 +51,8 @@ func (cfg *Config) CreateGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startedAt := sql.NullTime{}
-	if !params.StartedAt.IsZero() {
-		startedAt.Time = params.StartedAt
-		startedAt.Valid = true
-	} else {
-		startedAt.Valid = false
-	}
-
 	createdGame, err := cfg.DB.CreateGame(r.Context(), database.CreateGameParams{
 		GameCode:   params.GameCode,
-		StartedAt:  startedAt,
 		AverageMmr: params.AverageMmr,
 	})
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -79,6 +80,7 @@ type TeamInfo struct {
 	MonsterCredits int
 	TotalTime      int
 	mmrGainInGame  int
+	AverageMmr     int
 }
 
 type User struct {
@@ -103,6 +105,7 @@ func getTeamInfo(cfg *Config, gameID int) map[int]TeamInfo {
 		weaponNum := game.BestWeapon
 		gameID := game.GameID
 		credits := getMonsterCredits(game)
+		averageMMr := game.MmrAvg
 
 		team := teams[rank]
 
@@ -136,6 +139,7 @@ func getTeamInfo(cfg *Config, gameID int) map[int]TeamInfo {
 		team.MonsterCredits += credits
 		team.TotalTime = game.TotalTime
 		team.mmrGainInGame = game.MmrGainInGame
+		team.AverageMmr = averageMMr
 		teams[rank] = team
 	}
 	for rank, team := range teams {
@@ -182,6 +186,21 @@ func getMonsterCredits(game erapi.UserGame) int {
 	totalcredit := creditChicken + creditBoar + creditWolf + creditBear + creditBat + creditWildDog + int(creditRaven)
 	return totalcredit
 }
+func ToPGIntArray(nums []int) string {
+	if len(nums) == 0 {
+		return "{}"
+	}
+	var b strings.Builder
+	b.WriteByte('{')
+	for i, v := range nums {
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(strconv.Itoa(v))
+	}
+	b.WriteByte('}')
+	return b.String()
+}
 
 func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	file, err := os.Create(filename)
@@ -193,7 +212,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"GameRank", "GameID", "TeamNum", "CharacterNums", "WeaponNums", "TeamKills", "MonsterCredits", "TotalTime", "teamAvgMmr", "mmrGainInGame"}
+	header := []string{"game_rank", "game_code", "game_avg_mmr", "team_num", "characater_nums", "weapon_nums", "team_kills", "monster_credits", "total_time", "team_avg_mmr", "mmr_gain_in_game"}
 	if err := writer.Write(header); err != nil {
 		return err
 	}
@@ -212,8 +231,8 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 				characterNums = append(characterNums, user.CharacterNum)
 				weaponNums = append(weaponNums, user.WeaponNum)
 			}
-			charNumsStr := fmt.Sprintf("%v", characterNums)
-			weaponNumsStr := fmt.Sprintf("%v", weaponNums)
+			charNumsStr := ToPGIntArray(characterNums)
+			weaponNumsStr := ToPGIntArray(weaponNums)
 			teamAvgMmr := 0
 			for _, user := range team.Users {
 				teamAvgMmr += user.CurrentMmr
@@ -222,6 +241,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 			record := []string{
 				fmt.Sprintf("%d", rank),
 				fmt.Sprintf("%d", team.GameID),
+				fmt.Sprintf("%d", team.AverageMmr),
 				fmt.Sprintf("%d", team.Users[0].TeamNumber),
 				charNumsStr,
 				weaponNumsStr,

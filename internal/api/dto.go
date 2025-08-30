@@ -29,7 +29,7 @@ type GameDTO struct {
 
 type GameTeamDTO struct {
 	ID             int32     `json:"id"`
-	GameID         int32     `json:"gameId"`
+	GameID         int64     `json:"gameId"`
 	TeamID         int32     `json:"teamId"`
 	GameRank       int32     `json:"gameRank"`
 	TeamKills      int32     `json:"teamKills"`

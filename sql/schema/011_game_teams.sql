@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS game_teams (
     id SERIAL PRIMARY KEY,
-    game_id INT NOT NULL REFERENCES games (id) ON DELETE CASCADE,
+    game_id BIGINT NOT NULL REFERENCES games (game_code) ON DELETE CASCADE,
     team_id INT NOT NULL,
     game_rank INT NOT NULL,
     team_kills INT NOT NULL,

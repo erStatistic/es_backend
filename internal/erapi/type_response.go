@@ -26,7 +26,13 @@ type RankResponse struct {
 }
 
 type UserStatResponse struct {
-	Code      int       `json:"code"`
-	Message   string    `json:"message"`
-	UserStats UserStats `json:"userStats"`
+	Code      int         `json:"code"`
+	Message   string      `json:"message"`
+	UserStats []UserStats `json:"userStats"`
+}
+
+type RouteResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Result  Route  `json:"result"`
 }

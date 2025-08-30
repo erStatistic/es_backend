@@ -24,6 +24,7 @@ func (c *Client) UserStatByUserId(userNum int) ([]UserCharacterStat, error) {
 	MatchingMode := 3
 
 	url := fmt.Sprintf("%s/user/stats/%d/%d/%d", baseURLv2, userNum, SeasonID, MatchingMode)
+	fmt.Println(url)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -59,6 +60,7 @@ func (c *Client) UserStatByUserId(userNum int) ([]UserCharacterStat, error) {
 		fmt.Printf("UserStatByUserId StatusCode : %d\n", result.Code)
 		return nil, err
 	}
+	userstats := result.UserStats
 
-	return result.UserStats.CharacterStats, nil
+	return userstats[0].CharacterStats, nil
 }

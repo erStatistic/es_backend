@@ -132,6 +132,12 @@ func getCommands() map[string]command {
 			descrpition: "Displays character team information",
 			callback:    commandCharacterTeamInfo,
 		},
+
+		"toprankroute": {
+			name:        "toprankroute",
+			descrpition: "Displays top rank route information",
+			callback:    commandTopRankRoute,
+		},
 		"statistics": {
 			name:        "statistics",
 			descrpition: "Displays statistics",

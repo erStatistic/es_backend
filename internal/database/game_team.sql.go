@@ -28,7 +28,7 @@ RETURNING
 `
 
 type CreateGameTeamParams struct {
-	GameID         int32
+	GameID         int64
 	TeamID         int32
 	GameRank       int32
 	TeamKills      int32
@@ -89,7 +89,7 @@ WHERE
 `
 
 type GetGameTeamParams struct {
-	GameID int32
+	GameID int64
 	TeamID int32
 }
 
@@ -122,7 +122,7 @@ WHERE
     game_id = $1
 `
 
-func (q *Queries) GetGameTeamByGameID(ctx context.Context, gameID int32) ([]GameTeam, error) {
+func (q *Queries) GetGameTeamByGameID(ctx context.Context, gameID int64) ([]GameTeam, error) {
 	rows, err := q.db.QueryContext(ctx, getGameTeamByGameID, gameID)
 	if err != nil {
 		return nil, err
@@ -265,7 +265,7 @@ WHERE
 
 type PatchGameTeamParams struct {
 	ID             int32
-	GameID         int32
+	GameID         int64
 	TeamID         int32
 	GameRank       int32
 	TeamKills      int32

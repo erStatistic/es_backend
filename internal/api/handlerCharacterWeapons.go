@@ -341,6 +341,10 @@ type cwOverviewResp struct {
 			SPD int `json:"spd"`
 			SUP int `json:"sup"`
 		} `json:"stats"`
+		Routes []struct {
+			ID    int32  `json:"id"`
+			Title string `json:"title"`
+		} `json:"routes"`
 	} `json:"overview"`
 }
 
@@ -432,6 +436,25 @@ func (cfg *Config) GetCwOverview(w http.ResponseWriter, r *http.Request) {
 	out.Overview.Stats.CC = int(cc)
 	out.Overview.Stats.SPD = int(spd)
 	out.Overview.Stats.SUP = int(sup)
+
+	// ✅ routes는 DB 값으로 채움
+	routes, err := cfg.DB.ListCWRoutes(r.Context(), database.ListCWRoutesParams{
+		CharacterID: ident.CwID,
+		WeaponID:    ident.WCode,
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to list CW routes", err)
+		return
+	}
+	out.Overview.Routes = make([]struct {
+		ID    int32  `json:"id"`
+		Title string `json:"title"`
+	}, len(routes))
+	for i, route := range routes {
+		out.Overview.Routes[i].ID = route.RouteID
+		out.Overview.Routes[i].Title = route.Title
+	}
 
 	w.Header().Set("Cache-Control", "public, max-age=60")
 	respondWithJson(w, http.StatusOK, "CW overview retrieved", out)

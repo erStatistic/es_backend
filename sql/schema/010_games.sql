@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS games (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_games_started_at_desc ON games (started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_started_at ON games (started_at);
 
 CREATE TRIGGER trg_games_updated BEFORE
 UPDATE ON games FOR EACH ROW
@@ -17,6 +17,6 @@ EXECUTE FUNCTION set_updated_at ();
 -- +goose Down
 DROP TRIGGER IF EXISTS trg_games_updated ON games;
 
-DROP INDEX IF EXISTS idx_games_started_at_desc;
+DROP INDEX IF EXISTS idx_games_started_at;
 
 DROP TABLE IF EXISTS games;

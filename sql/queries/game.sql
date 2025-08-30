@@ -1,8 +1,8 @@
 -- name: CreateGame :one
 INSERT INTO
-    games (game_code, started_at, average_mmr)
+    games (game_code, average_mmr)
 VALUES
-    ($1, $2, $3)
+    ($1, $2)
 RETURNING
     *;
 

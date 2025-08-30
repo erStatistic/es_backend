@@ -12,6 +12,28 @@ func (cfg *Config) Routes() http.Handler {
 	r.Use(middleware.RequestID, middleware.RealIP, middleware.Recoverer, middleware.Logger)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Route("/users", func(r chi.Router) {
+			r.Get("/", cfg.ListUsers)
+			r.Post("/", cfg.CreateUser)
+			r.Route("/{userId}", func(r chi.Router) {
+				r.Use(cfg.UserCtx)
+				r.Get("/", cfg.GetUser)
+				r.Patch("/", cfg.PatchUser)
+				r.Delete("/", cfg.DeleteUser)
+				r.Get("/top3", cfg.ListUserTop3)
+			})
+			r.Route("/stats", func(r chi.Router) {
+				r.Post("/", cfg.CreateUserStat)
+				r.Get("/", cfg.ListUserStat)
+				r.Route("/{userStatId}", func(r chi.Router) {
+					r.Use(cfg.UserStatCtx)
+					r.Get("/", cfg.GetUserStat)
+					r.Patch("/", cfg.PatchUserStat)
+					r.Delete("/", cfg.DeleteUserStat)
+				})
+			})
+		})
+
 		r.Route("/characters", func(r chi.Router) {
 			r.Get("/", cfg.ListCharacters)
 			r.Post("/", cfg.CreateCharacter)
@@ -137,6 +159,16 @@ func (cfg *Config) Routes() http.Handler {
 				r.Get("/", cfg.GetGameTeamCW)
 				r.Patch("/", cfg.PatchGameTeamCW)
 				r.Delete("/", cfg.DeleteGameTeamCW)
+			})
+		})
+		r.Route("/routes", func(r chi.Router) {
+			r.Get("/", cfg.ListUserRoutes)
+			r.Post("/", cfg.CreateUserRoute)
+			r.Route("/{routeId}", func(r chi.Router) {
+				r.Use(cfg.UserRouteCtx)
+				r.Get("/", cfg.GetUserRoute)
+				r.Patch("/", cfg.PatchUserRoute)
+				r.Delete("/", cfg.DeleteUserRoute)
 			})
 		})
 	})
