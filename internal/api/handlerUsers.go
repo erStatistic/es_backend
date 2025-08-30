@@ -20,7 +20,7 @@ func (cfg *Config) UserCtx(next http.Handler) http.Handler {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		user, err := cfg.DB.GetUser(r.Context(), int32(UserID))
+		user, err := cfg.DB.GetUserByUserNum(r.Context(), int32(UserID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -97,7 +97,7 @@ func (cfg *Config) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, userstat := range userstats {
 		_, err := cfg.DB.CreateUserStat(r.Context(), database.CreateUserStatParams{
-			UserID:      int32(user.UserNum),
+			UserID:      int32(createdUser.UserNum),
 			CharacterID: int32(userstat.CharacterCode),
 		})
 		if err != nil {

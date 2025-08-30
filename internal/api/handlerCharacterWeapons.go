@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -439,7 +440,7 @@ func (cfg *Config) GetCwOverview(w http.ResponseWriter, r *http.Request) {
 
 	// ✅ routes는 DB 값으로 채움
 	routes, err := cfg.DB.ListCWRoutes(r.Context(), database.ListCWRoutesParams{
-		CharacterID: ident.CwID,
+		CharacterID: ident.ChID,
 		WeaponID:    ident.WCode,
 	})
 
@@ -451,6 +452,7 @@ func (cfg *Config) GetCwOverview(w http.ResponseWriter, r *http.Request) {
 		ID    int32  `json:"id"`
 		Title string `json:"title"`
 	}, len(routes))
+	fmt.Println(routes)
 	for i, route := range routes {
 		out.Overview.Routes[i].ID = route.RouteID
 		out.Overview.Routes[i].Title = route.Title
