@@ -7,31 +7,40 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createTier = `-- name: CreateTier :one
 INSERT INTO
-    tiers (image_url, name, mmr)
+    tiers (image_url, name, mmr_range, rank)
 VALUES
-    ($1, $2, $3)
+    ($1, $2, $3, $4)
 RETURNING
-    id, image_url, name, mmr, created_at, updated_at
+    id, image_url, name, rank, mmr_range, created_at, updated_at
 `
 
 type CreateTierParams struct {
-	ImageUrl string
-	Name     string
-	Mmr      int32
+	ImageUrl string                    `json:"image_url"`
+	Name     string                    `json:"name"`
+	MmrRange pgtype.Range[pgtype.Int4] `json:"mmr_range"`
+	Rank     int32                     `json:"rank"`
 }
 
 func (q *Queries) CreateTier(ctx context.Context, arg CreateTierParams) (Tier, error) {
-	row := q.db.QueryRowContext(ctx, createTier, arg.ImageUrl, arg.Name, arg.Mmr)
+	row := q.db.QueryRow(ctx, createTier,
+		arg.ImageUrl,
+		arg.Name,
+		arg.MmrRange,
+		arg.Rank,
+	)
 	var i Tier
 	err := row.Scan(
 		&i.ID,
 		&i.ImageUrl,
 		&i.Name,
-		&i.Mmr,
+		&i.Rank,
+		&i.MmrRange,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -45,13 +54,13 @@ WHERE
 `
 
 func (q *Queries) DeleteTier(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteTier, id)
+	_, err := q.db.Exec(ctx, deleteTier, id)
 	return err
 }
 
 const getTier = `-- name: GetTier :one
 SELECT
-    id, image_url, name, mmr, created_at, updated_at
+    id, image_url, name, rank, mmr_range, created_at, updated_at
 FROM
     tiers
 WHERE
@@ -59,13 +68,14 @@ WHERE
 `
 
 func (q *Queries) GetTier(ctx context.Context, id int32) (Tier, error) {
-	row := q.db.QueryRowContext(ctx, getTier, id)
+	row := q.db.QueryRow(ctx, getTier, id)
 	var i Tier
 	err := row.Scan(
 		&i.ID,
 		&i.ImageUrl,
 		&i.Name,
-		&i.Mmr,
+		&i.Rank,
+		&i.MmrRange,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -74,7 +84,7 @@ func (q *Queries) GetTier(ctx context.Context, id int32) (Tier, error) {
 
 const listTiers = `-- name: ListTiers :many
 SELECT
-    id, image_url, name, mmr, created_at, updated_at
+    id, image_url, name, rank, mmr_range, created_at, updated_at
 FROM
     tiers
 ORDER BY
@@ -82,7 +92,7 @@ ORDER BY
 `
 
 func (q *Queries) ListTiers(ctx context.Context) ([]Tier, error) {
-	rows, err := q.db.QueryContext(ctx, listTiers)
+	rows, err := q.db.Query(ctx, listTiers)
 	if err != nil {
 		return nil, err
 	}
@@ -94,16 +104,14 @@ func (q *Queries) ListTiers(ctx context.Context) ([]Tier, error) {
 			&i.ID,
 			&i.ImageUrl,
 			&i.Name,
-			&i.Mmr,
+			&i.Rank,
+			&i.MmrRange,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -116,24 +124,27 @@ UPDATE tiers
 SET
     image_url = $2,
     name = $3,
-    mmr = $4
+    mmr_range = $4,
+    rank = $5
 WHERE
     id = $1
 `
 
 type PatchTierParams struct {
-	ID       int32
-	ImageUrl string
-	Name     string
-	Mmr      int32
+	ID       int32                     `json:"id"`
+	ImageUrl string                    `json:"image_url"`
+	Name     string                    `json:"name"`
+	MmrRange pgtype.Range[pgtype.Int4] `json:"mmr_range"`
+	Rank     int32                     `json:"rank"`
 }
 
 func (q *Queries) PatchTier(ctx context.Context, arg PatchTierParams) error {
-	_, err := q.db.ExecContext(ctx, patchTier,
+	_, err := q.db.Exec(ctx, patchTier,
 		arg.ID,
 		arg.ImageUrl,
 		arg.Name,
-		arg.Mmr,
+		arg.MmrRange,
+		arg.Rank,
 	)
 	return err
 }

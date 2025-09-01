@@ -19,12 +19,12 @@ RETURNING
 `
 
 type CreatePositionParams struct {
-	Name     string
-	ImageUrl string
+	Name     string `json:"name"`
+	ImageUrl string `json:"image_url"`
 }
 
 func (q *Queries) CreatePosition(ctx context.Context, arg CreatePositionParams) (Position, error) {
-	row := q.db.QueryRowContext(ctx, createPosition, arg.Name, arg.ImageUrl)
+	row := q.db.QueryRow(ctx, createPosition, arg.Name, arg.ImageUrl)
 	var i Position
 	err := row.Scan(
 		&i.ID,
@@ -43,7 +43,7 @@ WHERE
 `
 
 func (q *Queries) DeletePosition(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deletePosition, id)
+	_, err := q.db.Exec(ctx, deletePosition, id)
 	return err
 }
 
@@ -57,7 +57,7 @@ WHERE
 `
 
 func (q *Queries) GetPosition(ctx context.Context, id int32) (Position, error) {
-	row := q.db.QueryRowContext(ctx, getPosition, id)
+	row := q.db.QueryRow(ctx, getPosition, id)
 	var i Position
 	err := row.Scan(
 		&i.ID,
@@ -79,7 +79,7 @@ ORDER BY
 `
 
 func (q *Queries) ListPositions(ctx context.Context) ([]Position, error) {
-	rows, err := q.db.QueryContext(ctx, listPositions)
+	rows, err := q.db.Query(ctx, listPositions)
 	if err != nil {
 		return nil, err
 	}
@@ -98,9 +98,6 @@ func (q *Queries) ListPositions(ctx context.Context) ([]Position, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -117,12 +114,12 @@ WHERE
 `
 
 type PatchPositionParams struct {
-	ID       int32
-	ImageUrl string
-	Name     string
+	ID       int32  `json:"id"`
+	ImageUrl string `json:"image_url"`
+	Name     string `json:"name"`
 }
 
 func (q *Queries) PatchPosition(ctx context.Context, arg PatchPositionParams) error {
-	_, err := q.db.ExecContext(ctx, patchPosition, arg.ID, arg.ImageUrl, arg.Name)
+	_, err := q.db.Exec(ctx, patchPosition, arg.ID, arg.ImageUrl, arg.Name)
 	return err
 }

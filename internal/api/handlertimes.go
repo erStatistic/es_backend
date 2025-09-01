@@ -50,7 +50,7 @@ func (cfg *Config) ListTimes(w http.ResponseWriter, r *http.Request) {
 		times = []database.Time{}
 	}
 
-	respondWithJson(w, http.StatusOK, "Times retrieved", times)
+	respondWithJson(w, http.StatusOK, "Times retrieved", Map(times, toTimeDTO))
 }
 func (cfg *Config) GetTime(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting time")
@@ -62,7 +62,7 @@ func (cfg *Config) GetTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJson(w, http.StatusOK, "Time retrieved", time)
+	respondWithJson(w, http.StatusOK, "Time retrieved", toTimeDTO(*time))
 }
 
 func (cfg *Config) CreateTime(w http.ResponseWriter, r *http.Request) {
@@ -72,29 +72,35 @@ func (cfg *Config) CreateTime(w http.ResponseWriter, r *http.Request) {
 		No        int32  `json:"no"`
 		Name      string `json:"name"`
 		Seconds   int32  `json:"seconds"`
-		StartTime int32  `json:"startTime"`
-		EndTime   int32  `json:"endTime"`
+		StartTime *int32 `json:"startTime"`
+		EndTime   *int32 `json:"endTime"`
 	}
 
-	params := parameters{}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+	var p parameters
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}
-	createdTime, err := cfg.DB.CreateTime(r.Context(), database.CreateTimeParams{
-		No:        params.No,
-		Name:      params.Name,
-		Seconds:   params.Seconds,
-		StartTime: params.StartTime,
-		EndTime:   params.EndTime,
+	if p.Name == "" {
+		respondWithError(w, http.StatusBadRequest, "name is required", nil)
+		return
+	}
+
+	rFixed := makeInt4Range(p.StartTime, p.EndTime)
+
+	row, err := cfg.DB.CreateTime(r.Context(), database.CreateTimeParams{
+		No:        p.No,
+		Name:      p.Name,
+		Seconds:   p.Seconds,
+		TimeRange: rFixed, // ✅ pgtype.Range[pgtype.Int4]
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create time", err)
 		return
 	}
-	respondWithJson(w, http.StatusOK, "Time created", createdTime)
-}
 
+	respondWithJson(w, http.StatusOK, "Time created", toTimeDTO(row))
+}
 func (cfg *Config) DeleteTime(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Deleting time")
 	ctx := r.Context()
@@ -123,8 +129,8 @@ func (cfg *Config) PatchTime(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name      string `json:"name"`
 		Seconds   int32  `json:"seconds"`
-		StartTime int32  `json:"startTime"`
-		EndTime   int32  `json:"endTime"`
+		StartTime *int32 `json:"startTime"`
+		EndTime   *int32 `json:"endTime"`
 	}
 
 	params := parameters{}
@@ -139,23 +145,24 @@ func (cfg *Config) PatchTime(w http.ResponseWriter, r *http.Request) {
 	if params.Seconds != 0 {
 		time.Seconds = params.Seconds
 	}
-	if params.StartTime != 0 {
-		time.StartTime = params.StartTime
-	}
-	if params.EndTime != 0 {
-		time.EndTime = params.EndTime
-	}
 
+	startPtr, endPtr := boundsFromRange(time.TimeRange)
+	if params.StartTime != nil {
+		startPtr = params.StartTime
+	}
+	if params.EndTime != nil {
+		endPtr = params.EndTime // 상한을 무한대로 바꾸고 싶다면 클라에서 null을 보냄(미전달 아님)
+	}
+	newRange := makeInt4Range(startPtr, endPtr)
 	err := cfg.DB.PatchTime(r.Context(), database.PatchTimeParams{
 		ID:        time.ID,
 		Name:      time.Name,
 		Seconds:   time.Seconds,
-		StartTime: time.StartTime,
-		EndTime:   time.EndTime,
+		TimeRange: newRange,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to patch time", err)
 		return
 	}
-	respondWithJson(w, http.StatusOK, "Time patched", time)
+	respondWithJson(w, http.StatusOK, "Time patched", toTimeDTO(*time))
 }

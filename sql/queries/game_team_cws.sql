@@ -1,8 +1,8 @@
 -- name: CreateGameTeamCW :one
 INSERT INTO
-    game_team_cws (game_team_id, cw_id)
+    game_team_cws (game_team_id, cw_id, mmr)
 VALUES
-    ($1, $2)
+    ($1, $2, $3)
 RETURNING
     *;
 
@@ -38,6 +38,8 @@ WHERE
 -- name: PatchGameTeamCW :exec
 UPDATE game_team_cws
 SET
-    cw_id = $2
+    game_team_id = $1,
+    cw_id = $2,
+    mmr = $3
 WHERE
     id = $1;

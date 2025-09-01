@@ -19,15 +19,15 @@ RETURNING
 `
 
 type CreateUserRouteParams struct {
-	RouteID     int32
-	Title       string
-	WeaponID    int32
-	CharacterID int32
-	Count       int32
+	RouteID     int32  `json:"route_id"`
+	Title       string `json:"title"`
+	WeaponID    int32  `json:"weapon_id"`
+	CharacterID int32  `json:"character_id"`
+	Count       int32  `json:"count"`
 }
 
 func (q *Queries) CreateUserRoute(ctx context.Context, arg CreateUserRouteParams) (UserRoute, error) {
-	row := q.db.QueryRowContext(ctx, createUserRoute,
+	row := q.db.QueryRow(ctx, createUserRoute,
 		arg.RouteID,
 		arg.Title,
 		arg.WeaponID,
@@ -55,7 +55,7 @@ WHERE
 `
 
 func (q *Queries) DeleteUserRoute(ctx context.Context, routeID int32) error {
-	_, err := q.db.ExecContext(ctx, deleteUserRoute, routeID)
+	_, err := q.db.Exec(ctx, deleteUserRoute, routeID)
 	return err
 }
 
@@ -69,7 +69,7 @@ WHERE
 `
 
 func (q *Queries) GetUserRoute(ctx context.Context, routeID int32) (UserRoute, error) {
-	row := q.db.QueryRowContext(ctx, getUserRoute, routeID)
+	row := q.db.QueryRow(ctx, getUserRoute, routeID)
 	var i UserRoute
 	err := row.Scan(
 		&i.ID,
@@ -99,12 +99,12 @@ LIMIT
 `
 
 type ListCWRoutesParams struct {
-	CharacterID int32
-	WeaponID    int32
+	CharacterID int32 `json:"character_id"`
+	WeaponID    int32 `json:"weapon_id"`
 }
 
 func (q *Queries) ListCWRoutes(ctx context.Context, arg ListCWRoutesParams) ([]UserRoute, error) {
-	rows, err := q.db.QueryContext(ctx, listCWRoutes, arg.CharacterID, arg.WeaponID)
+	rows, err := q.db.Query(ctx, listCWRoutes, arg.CharacterID, arg.WeaponID)
 	if err != nil {
 		return nil, err
 	}
@@ -125,9 +125,6 @@ func (q *Queries) ListCWRoutes(ctx context.Context, arg ListCWRoutesParams) ([]U
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -145,7 +142,7 @@ ORDER BY
 `
 
 func (q *Queries) ListUserRoutes(ctx context.Context) ([]UserRoute, error) {
-	rows, err := q.db.QueryContext(ctx, listUserRoutes)
+	rows, err := q.db.Query(ctx, listUserRoutes)
 	if err != nil {
 		return nil, err
 	}
@@ -166,9 +163,6 @@ func (q *Queries) ListUserRoutes(ctx context.Context) ([]UserRoute, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -188,15 +182,15 @@ WHERE
 `
 
 type PatchUserRouteParams struct {
-	RouteID     int32
-	WeaponID    int32
-	CharacterID int32
-	Title       string
-	Count       int32
+	RouteID     int32  `json:"route_id"`
+	WeaponID    int32  `json:"weapon_id"`
+	CharacterID int32  `json:"character_id"`
+	Title       string `json:"title"`
+	Count       int32  `json:"count"`
 }
 
 func (q *Queries) PatchUserRoute(ctx context.Context, arg PatchUserRouteParams) error {
-	_, err := q.db.ExecContext(ctx, patchUserRoute,
+	_, err := q.db.Exec(ctx, patchUserRoute,
 		arg.RouteID,
 		arg.WeaponID,
 		arg.CharacterID,

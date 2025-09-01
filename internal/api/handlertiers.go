@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -41,7 +42,6 @@ func (cfg *Config) ListTiers(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Listing tiers")
 	tiers, err := cfg.DB.ListTiers(r.Context())
 	if err != nil {
-		cfg.Log.Error("Failed to list tiers(ListTiers Query)", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "DB error ListTiers", err)
 		return
 	}
@@ -50,7 +50,7 @@ func (cfg *Config) ListTiers(w http.ResponseWriter, r *http.Request) {
 		tiers = []database.Tier{}
 	}
 
-	respondWithJson(w, http.StatusOK, "Tiers retrieved", tiers)
+	respondWithJson(w, http.StatusOK, "Tiers retrieved", Map(tiers, toTierDTO))
 }
 func (cfg *Config) GetTier(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting tier")
@@ -62,16 +62,17 @@ func (cfg *Config) GetTier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJson(w, http.StatusOK, "Tier retrieved", tier)
+	respondWithJson(w, http.StatusOK, "Tier retrieved", toTierDTO(*tier))
 }
 
 func (cfg *Config) CreateTier(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating tier")
-
 	type parameters struct {
 		ImageUrl string `json:"imageUrl"`
 		Name     string `json:"name"`
-		Mmr      int32  `json:"mmr"`
+		MmrMin   *int32 `json:"mmr_min"`
+		MmrMax   *int32 `json:"mmr_max"`
+		Rank     int32  `json:"rank"`
 	}
 
 	params := parameters{}
@@ -79,16 +80,21 @@ func (cfg *Config) CreateTier(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}
+
+	log.Println(params.MmrMin, params.MmrMax)
+	int4Range := makeInt4Range(params.MmrMin, params.MmrMax)
+
 	createdTier, err := cfg.DB.CreateTier(r.Context(), database.CreateTierParams{
 		ImageUrl: params.ImageUrl,
 		Name:     params.Name,
-		Mmr:      params.Mmr,
+		MmrRange: int4Range,
+		Rank:     params.Rank,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create tier", err)
 		return
 	}
-	respondWithJson(w, http.StatusOK, "Tier created", createdTier)
+	respondWithJson(w, http.StatusOK, "Tier created", toTierDTO(createdTier))
 }
 
 func (cfg *Config) DeleteTier(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +125,9 @@ func (cfg *Config) PatchTier(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		ImageUrl string `json:"imageUrl"`
 		Name     string `json:"name"`
-		Mmr      int32  `json:"mmr"`
+		MmrMin   int32  `json:"mmr_min"`
+		MmrMax   int32  `json:"mmr_max"`
+		Rank     int32  `json:"rank"`
 	}
 
 	params := parameters{}
@@ -134,19 +142,19 @@ func (cfg *Config) PatchTier(w http.ResponseWriter, r *http.Request) {
 	if params.Name != "" {
 		tier.Name = params.Name
 	}
-	if params.Mmr != 0 {
-		tier.Mmr = params.Mmr
-	}
+	mmrRange := makeInt4Range(&params.MmrMin, &params.MmrMax)
+	tier.MmrRange = mmrRange
 
 	err := cfg.DB.PatchTier(r.Context(), database.PatchTierParams{
 		ID:       tier.ID,
 		ImageUrl: tier.ImageUrl,
 		Name:     tier.Name,
-		Mmr:      tier.Mmr,
+		MmrRange: tier.MmrRange,
+		Rank:     tier.Rank,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to patch tier", err)
 		return
 	}
-	respondWithJson(w, http.StatusOK, "Tier patched", tier)
+	respondWithJson(w, http.StatusOK, "Tier patched", toTierDTO(*tier))
 }

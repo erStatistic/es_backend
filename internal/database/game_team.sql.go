@@ -28,18 +28,18 @@ RETURNING
 `
 
 type CreateGameTeamParams struct {
-	GameID         int64
-	TeamID         int32
-	GameRank       int32
-	TeamKills      int32
-	MonsterCredits int32
-	GainedMmr      int32
-	TeamAvgMmr     int32
-	TotalTime      int32
+	GameID         int64 `json:"game_id"`
+	TeamID         int32 `json:"team_id"`
+	GameRank       int32 `json:"game_rank"`
+	TeamKills      int32 `json:"team_kills"`
+	MonsterCredits int32 `json:"monster_credits"`
+	GainedMmr      int32 `json:"gained_mmr"`
+	TeamAvgMmr     int32 `json:"team_avg_mmr"`
+	TotalTime      int32 `json:"total_time"`
 }
 
 func (q *Queries) CreateGameTeam(ctx context.Context, arg CreateGameTeamParams) (GameTeam, error) {
-	row := q.db.QueryRowContext(ctx, createGameTeam,
+	row := q.db.QueryRow(ctx, createGameTeam,
 		arg.GameID,
 		arg.TeamID,
 		arg.GameRank,
@@ -74,7 +74,7 @@ WHERE
 `
 
 func (q *Queries) DeleteGameTeam(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteGameTeam, id)
+	_, err := q.db.Exec(ctx, deleteGameTeam, id)
 	return err
 }
 
@@ -89,12 +89,12 @@ WHERE
 `
 
 type GetGameTeamParams struct {
-	GameID int64
-	TeamID int32
+	GameID int64 `json:"game_id"`
+	TeamID int32 `json:"team_id"`
 }
 
 func (q *Queries) GetGameTeam(ctx context.Context, arg GetGameTeamParams) (GameTeam, error) {
-	row := q.db.QueryRowContext(ctx, getGameTeam, arg.GameID, arg.TeamID)
+	row := q.db.QueryRow(ctx, getGameTeam, arg.GameID, arg.TeamID)
 	var i GameTeam
 	err := row.Scan(
 		&i.ID,
@@ -123,7 +123,7 @@ WHERE
 `
 
 func (q *Queries) GetGameTeamByGameID(ctx context.Context, gameID int64) ([]GameTeam, error) {
-	rows, err := q.db.QueryContext(ctx, getGameTeamByGameID, gameID)
+	rows, err := q.db.Query(ctx, getGameTeamByGameID, gameID)
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +148,6 @@ func (q *Queries) GetGameTeamByGameID(ctx context.Context, gameID int64) ([]Game
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -168,7 +165,7 @@ WHERE
 `
 
 func (q *Queries) GetListGameTeamsByGameRank(ctx context.Context, gameRank int32) ([]GameTeam, error) {
-	rows, err := q.db.QueryContext(ctx, getListGameTeamsByGameRank, gameRank)
+	rows, err := q.db.Query(ctx, getListGameTeamsByGameRank, gameRank)
 	if err != nil {
 		return nil, err
 	}
@@ -193,9 +190,6 @@ func (q *Queries) GetListGameTeamsByGameRank(ctx context.Context, gameRank int32
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -213,7 +207,7 @@ ORDER BY
 `
 
 func (q *Queries) ListGameTeams(ctx context.Context) ([]GameTeam, error) {
-	rows, err := q.db.QueryContext(ctx, listGameTeams)
+	rows, err := q.db.Query(ctx, listGameTeams)
 	if err != nil {
 		return nil, err
 	}
@@ -238,9 +232,6 @@ func (q *Queries) ListGameTeams(ctx context.Context) ([]GameTeam, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -264,19 +255,19 @@ WHERE
 `
 
 type PatchGameTeamParams struct {
-	ID             int32
-	GameID         int64
-	TeamID         int32
-	GameRank       int32
-	TeamKills      int32
-	MonsterCredits int32
-	GainedMmr      int32
-	TeamAvgMmr     int32
-	TotalTime      int32
+	ID             int32 `json:"id"`
+	GameID         int64 `json:"game_id"`
+	TeamID         int32 `json:"team_id"`
+	GameRank       int32 `json:"game_rank"`
+	TeamKills      int32 `json:"team_kills"`
+	MonsterCredits int32 `json:"monster_credits"`
+	GainedMmr      int32 `json:"gained_mmr"`
+	TeamAvgMmr     int32 `json:"team_avg_mmr"`
+	TotalTime      int32 `json:"total_time"`
 }
 
 func (q *Queries) PatchGameTeam(ctx context.Context, arg PatchGameTeamParams) error {
-	_, err := q.db.ExecContext(ctx, patchGameTeam,
+	_, err := q.db.Exec(ctx, patchGameTeam,
 		arg.ID,
 		arg.GameID,
 		arg.TeamID,

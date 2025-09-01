@@ -19,12 +19,12 @@ RETURNING
 `
 
 type CreateUserStatParams struct {
-	UserID      int32
-	CharacterID int32
+	UserID      int32 `json:"user_id"`
+	CharacterID int32 `json:"character_id"`
 }
 
 func (q *Queries) CreateUserStat(ctx context.Context, arg CreateUserStatParams) (UserStat, error) {
-	row := q.db.QueryRowContext(ctx, createUserStat, arg.UserID, arg.CharacterID)
+	row := q.db.QueryRow(ctx, createUserStat, arg.UserID, arg.CharacterID)
 	var i UserStat
 	err := row.Scan(
 		&i.ID,
@@ -43,7 +43,7 @@ WHERE
 `
 
 func (q *Queries) DeleteUserStat(ctx context.Context, userID int32) error {
-	_, err := q.db.ExecContext(ctx, deleteUserStat, userID)
+	_, err := q.db.Exec(ctx, deleteUserStat, userID)
 	return err
 }
 
@@ -57,7 +57,7 @@ WHERE
 `
 
 func (q *Queries) GetUserStat(ctx context.Context, id int32) (UserStat, error) {
-	row := q.db.QueryRowContext(ctx, getUserStat, id)
+	row := q.db.QueryRow(ctx, getUserStat, id)
 	var i UserStat
 	err := row.Scan(
 		&i.ID,
@@ -79,7 +79,7 @@ WHERE
 `
 
 func (q *Queries) GetUserStatbyUserId(ctx context.Context, userID int32) ([]UserStat, error) {
-	rows, err := q.db.QueryContext(ctx, getUserStatbyUserId, userID)
+	rows, err := q.db.Query(ctx, getUserStatbyUserId, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -97,9 +97,6 @@ func (q *Queries) GetUserStatbyUserId(ctx context.Context, userID int32) ([]User
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -115,7 +112,7 @@ FROM
 `
 
 func (q *Queries) ListUserStat(ctx context.Context) ([]UserStat, error) {
-	rows, err := q.db.QueryContext(ctx, listUserStat)
+	rows, err := q.db.Query(ctx, listUserStat)
 	if err != nil {
 		return nil, err
 	}
@@ -133,9 +130,6 @@ func (q *Queries) ListUserStat(ctx context.Context) ([]UserStat, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -153,11 +147,11 @@ WHERE
 `
 
 type PatchUserStatParams struct {
-	UserID      int32
-	CharacterID int32
+	UserID      int32 `json:"user_id"`
+	CharacterID int32 `json:"character_id"`
 }
 
 func (q *Queries) PatchUserStat(ctx context.Context, arg PatchUserStatParams) error {
-	_, err := q.db.ExecContext(ctx, patchUserStat, arg.UserID, arg.CharacterID)
+	_, err := q.db.Exec(ctx, patchUserStat, arg.UserID, arg.CharacterID)
 	return err
 }

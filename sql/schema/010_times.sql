@@ -4,18 +4,17 @@ CREATE TABLE IF NOT EXISTS times (
     no INT NOT NULL,
     name VARCHAR(50) NOT NULL,
     seconds INT NOT NULL,
-    start_time INT NOT NULL,
-    end_time INT NOT NULL,
+    time_range INT4RANGE NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT uk_times_span UNIQUE (no, start_time, end_time)
+    CONSTRAINT uk_times_span UNIQUE (no, time_range)
 );
 
 CREATE TRIGGER trg_times_updated BEFORE
 UPDATE ON times FOR EACH ROW
 EXECUTE FUNCTION set_updated_at ();
 
-CREATE INDEX IF NOT EXISTS idx_times_span ON times (no, start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_times_span ON times (no, time_range);
 
 -- +goose Down
 DROP INDEX IF EXISTS idx_times_span;

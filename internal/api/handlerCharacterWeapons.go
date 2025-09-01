@@ -181,8 +181,8 @@ func (cfg *Config) ListCwDirectoryByCluster(w http.ResponseWriter, r *http.Reque
 	out := make([]header, 0, len(rows))
 	for _, r := range rows {
 		role := ""
-		if r.Role.Valid && r.Role.String != "" {
-			role = r.Role.String
+		if r.Role != nil {
+			role = *r.Role
 		} else if fb, ok := clusterRoleFallback[r.Label]; ok {
 			role = fb
 		} else {

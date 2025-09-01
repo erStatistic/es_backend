@@ -5,140 +5,159 @@
 package database
 
 import (
-	"database/sql"
-	"time"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Character struct {
-	ID           int32
-	NameKr       string
-	ImageUrlMini string
-	ImageUrlFull string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           int32              `json:"id"`
+	NameKr       string             `json:"name_kr"`
+	ImageUrlMini string             `json:"image_url_mini"`
+	ImageUrlFull string             `json:"image_url_full"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
 type CharacterWeapon struct {
-	ID          int32
-	CharacterID int32
-	WeaponID    int32
-	PositionID  int32
-	ClusterID   int32
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          int32              `json:"id"`
+	CharacterID int32              `json:"character_id"`
+	WeaponID    int32              `json:"weapon_id"`
+	PositionID  int32              `json:"position_id"`
+	ClusterID   int32              `json:"cluster_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type CharacterWeaponStat struct {
-	CwID      int32
-	Atk       int32
-	Def       int32
-	Cc        int32
-	Spd       int32
-	Sup       int32
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CwID      int32              `json:"cw_id"`
+	Atk       int32              `json:"atk"`
+	Def       int32              `json:"def"`
+	Cc        int32              `json:"cc"`
+	Spd       int32              `json:"spd"`
+	Sup       int32              `json:"sup"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Cluster struct {
-	ID        int32
-	Name      string
-	ImageUrl  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int32              `json:"id"`
+	Name      string             `json:"name"`
+	ImageUrl  string             `json:"image_url"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Game struct {
-	ID         int32
-	GameCode   int64
-	StartedAt  sql.NullTime
-	AverageMmr int32
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID         int32              `json:"id"`
+	GameCode   int64              `json:"game_code"`
+	StartedAt  pgtype.Timestamptz `json:"started_at"`
+	AverageMmr int32              `json:"average_mmr"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
 }
 
 type GameTeam struct {
-	ID             int32
-	GameID         int64
-	TeamID         int32
-	GameRank       int32
-	TeamKills      int32
-	MonsterCredits int32
-	GainedMmr      int32
-	TeamAvgMmr     int32
-	TotalTime      int32
-	TimesID        sql.NullInt32
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID             int32              `json:"id"`
+	GameID         int64              `json:"game_id"`
+	TeamID         int32              `json:"team_id"`
+	GameRank       int32              `json:"game_rank"`
+	TeamKills      int32              `json:"team_kills"`
+	MonsterCredits int32              `json:"monster_credits"`
+	GainedMmr      int32              `json:"gained_mmr"`
+	TeamAvgMmr     int32              `json:"team_avg_mmr"`
+	TotalTime      int32              `json:"total_time"`
+	TimesID        *int32             `json:"times_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
 type GameTeamCw struct {
-	ID         int32
-	GameTeamID int32
-	CwID       int32
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID         int32              `json:"id"`
+	GameTeamID int32              `json:"game_team_id"`
+	CwID       int32              `json:"cw_id"`
+	Mmr        int32              `json:"mmr"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Item struct {
+	ID        int32              `json:"id"`
+	SkillID   int32              `json:"skill_id"`
+	NameKr    string             `json:"name_kr"`
+	ImageUrl  string             `json:"image_url"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Position struct {
-	ID        int32
-	Name      string
-	ImageUrl  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int32              `json:"id"`
+	Name      string             `json:"name"`
+	ImageUrl  string             `json:"image_url"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Skill struct {
+	ID          int32              `json:"id"`
+	SkillID     int32              `json:"skill_id"`
+	CharacterID int32              `json:"character_id"`
+	NameKr      string             `json:"name_kr"`
+	ImageUrl    string             `json:"image_url"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Tier struct {
-	ID        int32
-	ImageUrl  string
-	Name      string
-	Mmr       int32
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int32                     `json:"id"`
+	ImageUrl  string                    `json:"image_url"`
+	Name      string                    `json:"name"`
+	Rank      int32                     `json:"rank"`
+	MmrRange  pgtype.Range[pgtype.Int4] `json:"mmr_range"`
+	CreatedAt pgtype.Timestamptz        `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz        `json:"updated_at"`
 }
 
 type Time struct {
-	ID        int32
-	No        int32
-	Name      string
-	Seconds   int32
-	StartTime int32
-	EndTime   int32
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int32                     `json:"id"`
+	No        int32                     `json:"no"`
+	Name      string                    `json:"name"`
+	Seconds   int32                     `json:"seconds"`
+	TimeRange pgtype.Range[pgtype.Int4] `json:"time_range"`
+	CreatedAt pgtype.Timestamptz        `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz        `json:"updated_at"`
 }
 
 type User struct {
-	ID        int32
-	Nickname  string
-	UserNum   int32
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int32              `json:"id"`
+	Nickname  string             `json:"nickname"`
+	UserNum   int32              `json:"user_num"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type UserRoute struct {
-	ID          int32
-	RouteID     int32
-	Title       string
-	WeaponID    int32
-	CharacterID int32
-	Count       int32
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          int32              `json:"id"`
+	RouteID     int32              `json:"route_id"`
+	Title       string             `json:"title"`
+	WeaponID    int32              `json:"weapon_id"`
+	CharacterID int32              `json:"character_id"`
+	Count       int32              `json:"count"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type UserStat struct {
-	ID          int32
-	UserID      int32
-	CharacterID int32
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          int32              `json:"id"`
+	UserID      int32              `json:"user_id"`
+	CharacterID int32              `json:"character_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Weapon struct {
-	ID        int32
-	Code      int32
-	NameKr    string
-	ImageUrl  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int32              `json:"id"`
+	Code      int32              `json:"code"`
+	NameKr    string             `json:"name_kr"`
+	ImageUrl  string             `json:"image_url"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }

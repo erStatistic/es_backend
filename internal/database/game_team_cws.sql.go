@@ -11,25 +11,27 @@ import (
 
 const createGameTeamCW = `-- name: CreateGameTeamCW :one
 INSERT INTO
-    game_team_cws (game_team_id, cw_id)
+    game_team_cws (game_team_id, cw_id, mmr)
 VALUES
-    ($1, $2)
+    ($1, $2, $3)
 RETURNING
-    id, game_team_id, cw_id, created_at, updated_at
+    id, game_team_id, cw_id, mmr, created_at, updated_at
 `
 
 type CreateGameTeamCWParams struct {
-	GameTeamID int32
-	CwID       int32
+	GameTeamID int32 `json:"game_team_id"`
+	CwID       int32 `json:"cw_id"`
+	Mmr        int32 `json:"mmr"`
 }
 
 func (q *Queries) CreateGameTeamCW(ctx context.Context, arg CreateGameTeamCWParams) (GameTeamCw, error) {
-	row := q.db.QueryRowContext(ctx, createGameTeamCW, arg.GameTeamID, arg.CwID)
+	row := q.db.QueryRow(ctx, createGameTeamCW, arg.GameTeamID, arg.CwID, arg.Mmr)
 	var i GameTeamCw
 	err := row.Scan(
 		&i.ID,
 		&i.GameTeamID,
 		&i.CwID,
+		&i.Mmr,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -43,13 +45,13 @@ WHERE
 `
 
 func (q *Queries) DeleteGameTeamCW(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteGameTeamCW, id)
+	_, err := q.db.Exec(ctx, deleteGameTeamCW, id)
 	return err
 }
 
 const getGameTeamCW = `-- name: GetGameTeamCW :one
 SELECT
-    id, game_team_id, cw_id, created_at, updated_at
+    id, game_team_id, cw_id, mmr, created_at, updated_at
 FROM
     game_team_cws
 WHERE
@@ -57,12 +59,13 @@ WHERE
 `
 
 func (q *Queries) GetGameTeamCW(ctx context.Context, id int32) (GameTeamCw, error) {
-	row := q.db.QueryRowContext(ctx, getGameTeamCW, id)
+	row := q.db.QueryRow(ctx, getGameTeamCW, id)
 	var i GameTeamCw
 	err := row.Scan(
 		&i.ID,
 		&i.GameTeamID,
 		&i.CwID,
+		&i.Mmr,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -71,7 +74,7 @@ func (q *Queries) GetGameTeamCW(ctx context.Context, id int32) (GameTeamCw, erro
 
 const listGameSameTeamCWs = `-- name: ListGameSameTeamCWs :many
 SELECT
-    id, game_team_id, cw_id, created_at, updated_at
+    id, game_team_id, cw_id, mmr, created_at, updated_at
 FROM
     game_team_cws
 WHERE
@@ -79,7 +82,7 @@ WHERE
 `
 
 func (q *Queries) ListGameSameTeamCWs(ctx context.Context, gameTeamID int32) ([]GameTeamCw, error) {
-	rows, err := q.db.QueryContext(ctx, listGameSameTeamCWs, gameTeamID)
+	rows, err := q.db.Query(ctx, listGameSameTeamCWs, gameTeamID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,15 +94,13 @@ func (q *Queries) ListGameSameTeamCWs(ctx context.Context, gameTeamID int32) ([]
 			&i.ID,
 			&i.GameTeamID,
 			&i.CwID,
+			&i.Mmr,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -109,7 +110,7 @@ func (q *Queries) ListGameSameTeamCWs(ctx context.Context, gameTeamID int32) ([]
 
 const listGameTeamCWs = `-- name: ListGameTeamCWs :many
 SELECT
-    id, game_team_id, cw_id, created_at, updated_at
+    id, game_team_id, cw_id, mmr, created_at, updated_at
 FROM
     game_team_cws
 ORDER BY
@@ -117,7 +118,7 @@ ORDER BY
 `
 
 func (q *Queries) ListGameTeamCWs(ctx context.Context) ([]GameTeamCw, error) {
-	rows, err := q.db.QueryContext(ctx, listGameTeamCWs)
+	rows, err := q.db.Query(ctx, listGameTeamCWs)
 	if err != nil {
 		return nil, err
 	}
@@ -129,15 +130,13 @@ func (q *Queries) ListGameTeamCWs(ctx context.Context) ([]GameTeamCw, error) {
 			&i.ID,
 			&i.GameTeamID,
 			&i.CwID,
+			&i.Mmr,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -148,17 +147,20 @@ func (q *Queries) ListGameTeamCWs(ctx context.Context) ([]GameTeamCw, error) {
 const patchGameTeamCW = `-- name: PatchGameTeamCW :exec
 UPDATE game_team_cws
 SET
-    cw_id = $2
+    game_team_id = $1,
+    cw_id = $2,
+    mmr = $3
 WHERE
     id = $1
 `
 
 type PatchGameTeamCWParams struct {
-	ID   int32
-	CwID int32
+	GameTeamID int32 `json:"game_team_id"`
+	CwID       int32 `json:"cw_id"`
+	Mmr        int32 `json:"mmr"`
 }
 
 func (q *Queries) PatchGameTeamCW(ctx context.Context, arg PatchGameTeamCWParams) error {
-	_, err := q.db.ExecContext(ctx, patchGameTeamCW, arg.ID, arg.CwID)
+	_, err := q.db.Exec(ctx, patchGameTeamCW, arg.GameTeamID, arg.CwID, arg.Mmr)
 	return err
 }

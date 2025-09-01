@@ -19,13 +19,13 @@ RETURNING
 `
 
 type CreateCharacterParams struct {
-	ImageUrlMini string
-	ImageUrlFull string
-	NameKr       string
+	ImageUrlMini string `json:"image_url_mini"`
+	ImageUrlFull string `json:"image_url_full"`
+	NameKr       string `json:"name_kr"`
 }
 
 func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams) (Character, error) {
-	row := q.db.QueryRowContext(ctx, createCharacter, arg.ImageUrlMini, arg.ImageUrlFull, arg.NameKr)
+	row := q.db.QueryRow(ctx, createCharacter, arg.ImageUrlMini, arg.ImageUrlFull, arg.NameKr)
 	var i Character
 	err := row.Scan(
 		&i.ID,
@@ -45,7 +45,7 @@ WHERE
 `
 
 func (q *Queries) DeleteCharacter(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCharacter, id)
+	_, err := q.db.Exec(ctx, deleteCharacter, id)
 	return err
 }
 
@@ -59,7 +59,7 @@ WHERE
 `
 
 func (q *Queries) GetCharacter(ctx context.Context, id int32) (Character, error) {
-	row := q.db.QueryRowContext(ctx, getCharacter, id)
+	row := q.db.QueryRow(ctx, getCharacter, id)
 	var i Character
 	err := row.Scan(
 		&i.ID,
@@ -82,7 +82,7 @@ ORDER BY
 `
 
 func (q *Queries) ListCharacters(ctx context.Context) ([]Character, error) {
-	rows, err := q.db.QueryContext(ctx, listCharacters)
+	rows, err := q.db.Query(ctx, listCharacters)
 	if err != nil {
 		return nil, err
 	}
@@ -102,9 +102,6 @@ func (q *Queries) ListCharacters(ctx context.Context) ([]Character, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -122,14 +119,14 @@ WHERE
 `
 
 type PatchCharacterParams struct {
-	ID           int32
-	ImageUrlMini string
-	ImageUrlFull string
-	NameKr       string
+	ID           int32  `json:"id"`
+	ImageUrlMini string `json:"image_url_mini"`
+	ImageUrlFull string `json:"image_url_full"`
+	NameKr       string `json:"name_kr"`
 }
 
 func (q *Queries) PatchCharacter(ctx context.Context, arg PatchCharacterParams) error {
-	_, err := q.db.ExecContext(ctx, patchCharacter,
+	_, err := q.db.Exec(ctx, patchCharacter,
 		arg.ID,
 		arg.ImageUrlMini,
 		arg.ImageUrlFull,

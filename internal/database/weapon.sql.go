@@ -19,13 +19,13 @@ RETURNING
 `
 
 type CreateWeaponParams struct {
-	Code     int32
-	NameKr   string
-	ImageUrl string
+	Code     int32  `json:"code"`
+	NameKr   string `json:"name_kr"`
+	ImageUrl string `json:"image_url"`
 }
 
 func (q *Queries) CreateWeapon(ctx context.Context, arg CreateWeaponParams) (Weapon, error) {
-	row := q.db.QueryRowContext(ctx, createWeapon, arg.Code, arg.NameKr, arg.ImageUrl)
+	row := q.db.QueryRow(ctx, createWeapon, arg.Code, arg.NameKr, arg.ImageUrl)
 	var i Weapon
 	err := row.Scan(
 		&i.ID,
@@ -45,7 +45,7 @@ WHERE
 `
 
 func (q *Queries) DeleteWeapon(ctx context.Context, code int32) error {
-	_, err := q.db.ExecContext(ctx, deleteWeapon, code)
+	_, err := q.db.Exec(ctx, deleteWeapon, code)
 	return err
 }
 
@@ -59,7 +59,7 @@ WHERE
 `
 
 func (q *Queries) GetWeapon(ctx context.Context, code int32) (Weapon, error) {
-	row := q.db.QueryRowContext(ctx, getWeapon, code)
+	row := q.db.QueryRow(ctx, getWeapon, code)
 	var i Weapon
 	err := row.Scan(
 		&i.ID,
@@ -82,7 +82,7 @@ ORDER BY
 `
 
 func (q *Queries) ListWeapons(ctx context.Context) ([]Weapon, error) {
-	rows, err := q.db.QueryContext(ctx, listWeapons)
+	rows, err := q.db.Query(ctx, listWeapons)
 	if err != nil {
 		return nil, err
 	}
@@ -102,9 +102,6 @@ func (q *Queries) ListWeapons(ctx context.Context) ([]Weapon, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -121,12 +118,12 @@ WHERE
 `
 
 type PatchWeaponParams struct {
-	Code     int32
-	ImageUrl string
-	NameKr   string
+	Code     int32  `json:"code"`
+	ImageUrl string `json:"image_url"`
+	NameKr   string `json:"name_kr"`
 }
 
 func (q *Queries) PatchWeapon(ctx context.Context, arg PatchWeaponParams) error {
-	_, err := q.db.ExecContext(ctx, patchWeapon, arg.Code, arg.ImageUrl, arg.NameKr)
+	_, err := q.db.Exec(ctx, patchWeapon, arg.Code, arg.ImageUrl, arg.NameKr)
 	return err
 }

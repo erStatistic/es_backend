@@ -19,12 +19,12 @@ RETURNING
 `
 
 type CreateUserParams struct {
-	Nickname string
-	UserNum  int32
+	Nickname string `json:"nickname"`
+	UserNum  int32  `json:"user_num"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Nickname, arg.UserNum)
+	row := q.db.QueryRow(ctx, createUser, arg.Nickname, arg.UserNum)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -43,7 +43,7 @@ WHERE
 `
 
 func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, id)
+	_, err := q.db.Exec(ctx, deleteUser, id)
 	return err
 }
 
@@ -57,7 +57,7 @@ WHERE
 `
 
 func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, id)
+	row := q.db.QueryRow(ctx, getUser, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -79,7 +79,7 @@ WHERE
 `
 
 func (q *Queries) GetUserByNickname(ctx context.Context, nickname string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByNickname, nickname)
+	row := q.db.QueryRow(ctx, getUserByNickname, nickname)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -101,7 +101,7 @@ WHERE
 `
 
 func (q *Queries) GetUserByUserNum(ctx context.Context, userNum int32) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByUserNum, userNum)
+	row := q.db.QueryRow(ctx, getUserByUserNum, userNum)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -121,7 +121,7 @@ FROM
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, listUsers)
+	rows, err := q.db.Query(ctx, listUsers)
 	if err != nil {
 		return nil, err
 	}
@@ -140,9 +140,6 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -159,12 +156,12 @@ WHERE
 `
 
 type PatchUserParams struct {
-	Nickname string
-	UserNum  int32
-	ID       int32
+	Nickname string `json:"nickname"`
+	UserNum  int32  `json:"user_num"`
+	ID       int32  `json:"id"`
 }
 
 func (q *Queries) PatchUser(ctx context.Context, arg PatchUserParams) error {
-	_, err := q.db.ExecContext(ctx, patchUser, arg.Nickname, arg.UserNum, arg.ID)
+	_, err := q.db.Exec(ctx, patchUser, arg.Nickname, arg.UserNum, arg.ID)
 	return err
 }

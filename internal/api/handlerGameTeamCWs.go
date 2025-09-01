@@ -36,6 +36,7 @@ func (cfg *Config) CreateGameTeamCW(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		CwID       int32 `json:"cw_id"`
 		GameTeamID int32 `json:"gameteam_id"`
+		Mmr        int32 `json:"mmr"`
 	}
 
 	params := parameters{}
@@ -47,6 +48,7 @@ func (cfg *Config) CreateGameTeamCW(w http.ResponseWriter, r *http.Request) {
 	createdGameTeamCW, err := cfg.DB.CreateGameTeamCW(r.Context(), database.CreateGameTeamCWParams{
 		GameTeamID: params.GameTeamID,
 		CwID:       params.CwID,
+		Mmr:        params.Mmr,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create GameTeamCW", err)
@@ -114,6 +116,7 @@ func (cfg *Config) PatchGameTeamCW(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		GameTeamID int32 `json:"gameteam_id"`
 		CwID       int32 `json:"cw_id"`
+		Mmr        int32 `json:"mmr"`
 	}
 
 	params := parameters{}
@@ -129,8 +132,9 @@ func (cfg *Config) PatchGameTeamCW(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := cfg.DB.PatchGameTeamCW(r.Context(), database.PatchGameTeamCWParams{
-		ID:   gtcw.ID,
-		CwID: gtcw.CwID,
+		GameTeamID: gtcw.GameTeamID,
+		CwID:       gtcw.CwID,
+		Mmr:        params.Mmr,
 	})
 
 	if err != nil {

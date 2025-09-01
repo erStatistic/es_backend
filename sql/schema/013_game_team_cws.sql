@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS game_team_cws (
     id SERIAL PRIMARY KEY,
     game_team_id INT NOT NULL REFERENCES game_teams (id) ON DELETE CASCADE,
     cw_id INT NOT NULL REFERENCES character_weapons (id) ON DELETE CASCADE,
+    mmr INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uk_game_team_cws UNIQUE (game_team_id, cw_id)

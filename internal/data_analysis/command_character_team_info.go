@@ -212,7 +212,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"game_rank", "game_code", "game_avg_mmr", "team_num", "characater_nums", "weapon_nums", "team_kills", "monster_credits", "total_time", "team_avg_mmr", "mmr_gain_in_game"}
+	header := []string{"game_rank", "game_code", "game_avg_mmr", "team_num", "characater_nums", "weapon_nums", "character_mmrs", "team_kills", "monster_credits", "total_time", "team_avg_mmr", "mmr_gain_in_game"}
 	if err := writer.Write(header); err != nil {
 		return err
 	}
@@ -233,10 +233,13 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 			}
 			charNumsStr := ToPGIntArray(characterNums)
 			weaponNumsStr := ToPGIntArray(weaponNums)
+			var characterMmrs []int
 			teamAvgMmr := 0
 			for _, user := range team.Users {
+				characterMmrs = append(characterMmrs, user.CurrentMmr)
 				teamAvgMmr += user.CurrentMmr
 			}
+			characterMmrsStr := ToPGIntArray(characterMmrs)
 			teamAvgMmr /= len(team.Users)
 			record := []string{
 				fmt.Sprintf("%d", rank),
@@ -245,6 +248,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 				fmt.Sprintf("%d", team.Users[0].TeamNumber),
 				charNumsStr,
 				weaponNumsStr,
+				characterMmrsStr,
 				fmt.Sprintf("%d", team.TeamKills),
 				fmt.Sprintf("%d", team.MonsterCredits),
 				fmt.Sprintf("%d", team.TotalTime),

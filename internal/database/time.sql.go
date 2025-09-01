@@ -7,32 +7,32 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createTime = `-- name: CreateTime :one
 INSERT INTO
-    times (no, name, seconds, start_time, end_time)
+    times (no, name, seconds, time_range)
 VALUES
-    ($1, $2, $3, $4, $5)
+    ($1, $2, $3, $4)
 RETURNING
-    id, no, name, seconds, start_time, end_time, created_at, updated_at
+    id, no, name, seconds, time_range, created_at, updated_at
 `
 
 type CreateTimeParams struct {
-	No        int32
-	Name      string
-	Seconds   int32
-	StartTime int32
-	EndTime   int32
+	No        int32                     `json:"no"`
+	Name      string                    `json:"name"`
+	Seconds   int32                     `json:"seconds"`
+	TimeRange pgtype.Range[pgtype.Int4] `json:"time_range"`
 }
 
 func (q *Queries) CreateTime(ctx context.Context, arg CreateTimeParams) (Time, error) {
-	row := q.db.QueryRowContext(ctx, createTime,
+	row := q.db.QueryRow(ctx, createTime,
 		arg.No,
 		arg.Name,
 		arg.Seconds,
-		arg.StartTime,
-		arg.EndTime,
+		arg.TimeRange,
 	)
 	var i Time
 	err := row.Scan(
@@ -40,8 +40,7 @@ func (q *Queries) CreateTime(ctx context.Context, arg CreateTimeParams) (Time, e
 		&i.No,
 		&i.Name,
 		&i.Seconds,
-		&i.StartTime,
-		&i.EndTime,
+		&i.TimeRange,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -55,13 +54,13 @@ WHERE
 `
 
 func (q *Queries) DeleteTime(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteTime, id)
+	_, err := q.db.Exec(ctx, deleteTime, id)
 	return err
 }
 
 const getTime = `-- name: GetTime :one
 SELECT
-    id, no, name, seconds, start_time, end_time, created_at, updated_at
+    id, no, name, seconds, time_range, created_at, updated_at
 FROM
     times
 WHERE
@@ -69,15 +68,14 @@ WHERE
 `
 
 func (q *Queries) GetTime(ctx context.Context, id int32) (Time, error) {
-	row := q.db.QueryRowContext(ctx, getTime, id)
+	row := q.db.QueryRow(ctx, getTime, id)
 	var i Time
 	err := row.Scan(
 		&i.ID,
 		&i.No,
 		&i.Name,
 		&i.Seconds,
-		&i.StartTime,
-		&i.EndTime,
+		&i.TimeRange,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -86,7 +84,7 @@ func (q *Queries) GetTime(ctx context.Context, id int32) (Time, error) {
 
 const listTimes = `-- name: ListTimes :many
 SELECT
-    id, no, name, seconds, start_time, end_time, created_at, updated_at
+    id, no, name, seconds, time_range, created_at, updated_at
 FROM
     times
 ORDER BY
@@ -94,7 +92,7 @@ ORDER BY
 `
 
 func (q *Queries) ListTimes(ctx context.Context) ([]Time, error) {
-	rows, err := q.db.QueryContext(ctx, listTimes)
+	rows, err := q.db.Query(ctx, listTimes)
 	if err != nil {
 		return nil, err
 	}
@@ -107,17 +105,13 @@ func (q *Queries) ListTimes(ctx context.Context) ([]Time, error) {
 			&i.No,
 			&i.Name,
 			&i.Seconds,
-			&i.StartTime,
-			&i.EndTime,
+			&i.TimeRange,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -130,27 +124,24 @@ UPDATE times
 SET
     name = $2,
     seconds = $3,
-    start_time = $4,
-    end_time = $5
+    time_range = $4
 WHERE
     id = $1
 `
 
 type PatchTimeParams struct {
-	ID        int32
-	Name      string
-	Seconds   int32
-	StartTime int32
-	EndTime   int32
+	ID        int32                     `json:"id"`
+	Name      string                    `json:"name"`
+	Seconds   int32                     `json:"seconds"`
+	TimeRange pgtype.Range[pgtype.Int4] `json:"time_range"`
 }
 
 func (q *Queries) PatchTime(ctx context.Context, arg PatchTimeParams) error {
-	_, err := q.db.ExecContext(ctx, patchTime,
+	_, err := q.db.Exec(ctx, patchTime,
 		arg.ID,
 		arg.Name,
 		arg.Seconds,
-		arg.StartTime,
-		arg.EndTime,
+		arg.TimeRange,
 	)
 	return err
 }

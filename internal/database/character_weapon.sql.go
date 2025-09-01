@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
 
 const createCharacterWeapon = `-- name: CreateCharacterWeapon :one
@@ -20,14 +19,14 @@ RETURNING
 `
 
 type CreateCharacterWeaponParams struct {
-	CharacterID int32
-	WeaponID    int32
-	PositionID  int32
-	ClusterID   int32
+	CharacterID int32 `json:"character_id"`
+	WeaponID    int32 `json:"weapon_id"`
+	PositionID  int32 `json:"position_id"`
+	ClusterID   int32 `json:"cluster_id"`
 }
 
 func (q *Queries) CreateCharacterWeapon(ctx context.Context, arg CreateCharacterWeaponParams) (CharacterWeapon, error) {
-	row := q.db.QueryRowContext(ctx, createCharacterWeapon,
+	row := q.db.QueryRow(ctx, createCharacterWeapon,
 		arg.CharacterID,
 		arg.WeaponID,
 		arg.PositionID,
@@ -53,7 +52,7 @@ WHERE
 `
 
 func (q *Queries) DeleteCharacterWeapon(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCharacterWeapon, id)
+	_, err := q.db.Exec(ctx, deleteCharacterWeapon, id)
 	return err
 }
 
@@ -67,7 +66,7 @@ WHERE
 `
 
 func (q *Queries) GetCharacterWeapon(ctx context.Context, id int32) (CharacterWeapon, error) {
-	row := q.db.QueryRowContext(ctx, getCharacterWeapon, id)
+	row := q.db.QueryRow(ctx, getCharacterWeapon, id)
 	var i CharacterWeapon
 	err := row.Scan(
 		&i.ID,
@@ -105,22 +104,22 @@ WHERE
 `
 
 type GetCwIdentityRow struct {
-	CwID        int32
-	ChID        int32
-	ChName      string
-	ChImg       string
-	WCode       int32
-	WName       string
-	WImg        string
-	PID         int32
-	PName       string
-	ClusterID   int32
-	ClusterName string
+	CwID        int32  `json:"cw_id"`
+	ChID        int32  `json:"ch_id"`
+	ChName      string `json:"ch_name"`
+	ChImg       string `json:"ch_img"`
+	WCode       int32  `json:"w_code"`
+	WName       string `json:"w_name"`
+	WImg        string `json:"w_img"`
+	PID         int32  `json:"p_id"`
+	PName       string `json:"p_name"`
+	ClusterID   int32  `json:"cluster_id"`
+	ClusterName string `json:"cluster_name"`
 }
 
 // overview에 표시할 신원(캐릭/무기/포지션)만 가져오는 쿼리
 func (q *Queries) GetCwIdentity(ctx context.Context, id int32) (GetCwIdentityRow, error) {
-	row := q.db.QueryRowContext(ctx, getCwIdentity, id)
+	row := q.db.QueryRow(ctx, getCwIdentity, id)
 	var i GetCwIdentityRow
 	err := row.Scan(
 		&i.CwID,
@@ -148,7 +147,7 @@ ORDER BY
 `
 
 func (q *Queries) ListCharacterWeapons(ctx context.Context) ([]CharacterWeapon, error) {
-	rows, err := q.db.QueryContext(ctx, listCharacterWeapons)
+	rows, err := q.db.Query(ctx, listCharacterWeapons)
 	if err != nil {
 		return nil, err
 	}
@@ -168,9 +167,6 @@ func (q *Queries) ListCharacterWeapons(ctx context.Context) ([]CharacterWeapon, 
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -203,20 +199,20 @@ ORDER BY
 `
 
 type ListCwByClusterIDRow struct {
-	CwID      int32
-	ChID      int32
-	ChName    string
-	ChImgMini string
-	ChImgFull string
-	WCode     int32
-	WName     string
-	WImg      string
-	PID       int32
-	PName     string
+	CwID      int32  `json:"cw_id"`
+	ChID      int32  `json:"ch_id"`
+	ChName    string `json:"ch_name"`
+	ChImgMini string `json:"ch_img_mini"`
+	ChImgFull string `json:"ch_img_full"`
+	WCode     int32  `json:"w_code"`
+	WName     string `json:"w_name"`
+	WImg      string `json:"w_img"`
+	PID       int32  `json:"p_id"`
+	PName     string `json:"p_name"`
 }
 
 func (q *Queries) ListCwByClusterID(ctx context.Context, clusterID int32) ([]ListCwByClusterIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, listCwByClusterID, clusterID)
+	rows, err := q.db.Query(ctx, listCwByClusterID, clusterID)
 	if err != nil {
 		return nil, err
 	}
@@ -239,9 +235,6 @@ func (q *Queries) ListCwByClusterID(ctx context.Context, clusterID int32) ([]Lis
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -308,15 +301,15 @@ ORDER BY
 `
 
 type ListCwDirectoryByClusterRow struct {
-	ClusterID  int32
-	Label      string
-	Role       sql.NullString
-	Cws        int64
-	Characters int64
+	ClusterID  int32   `json:"cluster_id"`
+	Label      string  `json:"label"`
+	Role       *string `json:"role"`
+	Cws        int64   `json:"cws"`
+	Characters int64   `json:"characters"`
 }
 
 func (q *Queries) ListCwDirectoryByCluster(ctx context.Context) ([]ListCwDirectoryByClusterRow, error) {
-	rows, err := q.db.QueryContext(ctx, listCwDirectoryByCluster)
+	rows, err := q.db.Query(ctx, listCwDirectoryByCluster)
 	if err != nil {
 		return nil, err
 	}
@@ -334,9 +327,6 @@ func (q *Queries) ListCwDirectoryByCluster(ctx context.Context) ([]ListCwDirecto
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -360,16 +350,16 @@ ORDER BY
 `
 
 type ListCwsByCharacterIDRow struct {
-	CwID           int32
-	WeaponCode     int32
-	WeaponName     string
-	WeaponImageUrl string
+	CwID           int32  `json:"cw_id"`
+	WeaponCode     int32  `json:"weapon_code"`
+	WeaponName     string `json:"weapon_name"`
+	WeaponImageUrl string `json:"weapon_image_url"`
 }
 
 // db/queries/character_weapons.sql
 // 캐릭터가 가진 CW(무기군) 목록
 func (q *Queries) ListCwsByCharacterID(ctx context.Context, characterID int32) ([]ListCwsByCharacterIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, listCwsByCharacterID, characterID)
+	rows, err := q.db.Query(ctx, listCwsByCharacterID, characterID)
 	if err != nil {
 		return nil, err
 	}
@@ -386,9 +376,6 @@ func (q *Queries) ListCwsByCharacterID(ctx context.Context, characterID int32) (
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -408,15 +395,15 @@ WHERE
 `
 
 type PatchCharacterWeaponParams struct {
-	ID          int32
-	CharacterID int32
-	WeaponID    int32
-	PositionID  int32
-	ClusterID   int32
+	ID          int32 `json:"id"`
+	CharacterID int32 `json:"character_id"`
+	WeaponID    int32 `json:"weapon_id"`
+	PositionID  int32 `json:"position_id"`
+	ClusterID   int32 `json:"cluster_id"`
 }
 
 func (q *Queries) PatchCharacterWeapon(ctx context.Context, arg PatchCharacterWeaponParams) error {
-	_, err := q.db.ExecContext(ctx, patchCharacterWeapon,
+	_, err := q.db.Exec(ctx, patchCharacterWeapon,
 		arg.ID,
 		arg.CharacterID,
 		arg.WeaponID,

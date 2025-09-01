@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
 
 const listCwByCharacterID = `-- name: ListCwByCharacterID :many
@@ -35,20 +34,20 @@ ORDER BY
 `
 
 type ListCwByCharacterIDRow struct {
-	CwID      int32
-	ChID      int32
-	ChName    string
-	ChImgMini string
-	ChImgFull string
-	WCode     int32
-	WName     string
-	WImg      string
-	PID       sql.NullInt32
-	PName     sql.NullString
+	CwID      int32   `json:"cw_id"`
+	ChID      int32   `json:"ch_id"`
+	ChName    string  `json:"ch_name"`
+	ChImgMini string  `json:"ch_img_mini"`
+	ChImgFull string  `json:"ch_img_full"`
+	WCode     int32   `json:"w_code"`
+	WName     string  `json:"w_name"`
+	WImg      string  `json:"w_img"`
+	PID       *int32  `json:"p_id"`
+	PName     *string `json:"p_name"`
 }
 
 func (q *Queries) ListCwByCharacterID(ctx context.Context, characterID int32) ([]ListCwByCharacterIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, listCwByCharacterID, characterID)
+	rows, err := q.db.Query(ctx, listCwByCharacterID, characterID)
 	if err != nil {
 		return nil, err
 	}
@@ -72,9 +71,6 @@ func (q *Queries) ListCwByCharacterID(ctx context.Context, characterID int32) ([
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -96,13 +92,13 @@ ORDER BY
 `
 
 type ListWeaponsByCharacterIDRow struct {
-	Code     int32
-	Name     string
-	ImageUrl string
+	Code     int32  `json:"code"`
+	Name     string `json:"name"`
+	ImageUrl string `json:"image_url"`
 }
 
 func (q *Queries) ListWeaponsByCharacterID(ctx context.Context, characterID int32) ([]ListWeaponsByCharacterIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, listWeaponsByCharacterID, characterID)
+	rows, err := q.db.Query(ctx, listWeaponsByCharacterID, characterID)
 	if err != nil {
 		return nil, err
 	}
@@ -114,9 +110,6 @@ func (q *Queries) ListWeaponsByCharacterID(ctx context.Context, characterID int3
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

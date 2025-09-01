@@ -1,8 +1,8 @@
 -- name: CreateTime :one
 INSERT INTO
-    times (no, name, seconds, start_time, end_time)
+    times (no, name, seconds, time_range)
 VALUES
-    ($1, $2, $3, $4, $5)
+    ($1, $2, $3, $4)
 RETURNING
     *;
 
@@ -32,7 +32,6 @@ UPDATE times
 SET
     name = $2,
     seconds = $3,
-    start_time = $4,
-    end_time = $5
+    time_range = $4
 WHERE
     id = $1;

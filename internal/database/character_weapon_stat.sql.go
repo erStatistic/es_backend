@@ -19,16 +19,16 @@ RETURNING
 `
 
 type CreateCharacterWeaponStatParams struct {
-	CwID int32
-	Atk  int32
-	Def  int32
-	Cc   int32
-	Spd  int32
-	Sup  int32
+	CwID int32 `json:"cw_id"`
+	Atk  int32 `json:"atk"`
+	Def  int32 `json:"def"`
+	Cc   int32 `json:"cc"`
+	Spd  int32 `json:"spd"`
+	Sup  int32 `json:"sup"`
 }
 
 func (q *Queries) CreateCharacterWeaponStat(ctx context.Context, arg CreateCharacterWeaponStatParams) (CharacterWeaponStat, error) {
-	row := q.db.QueryRowContext(ctx, createCharacterWeaponStat,
+	row := q.db.QueryRow(ctx, createCharacterWeaponStat,
 		arg.CwID,
 		arg.Atk,
 		arg.Def,
@@ -57,7 +57,7 @@ WHERE
 `
 
 func (q *Queries) DeleteCharacterWeaponStat(ctx context.Context, cwID int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCharacterWeaponStat, cwID)
+	_, err := q.db.Exec(ctx, deleteCharacterWeaponStat, cwID)
 	return err
 }
 
@@ -71,7 +71,7 @@ WHERE
 `
 
 func (q *Queries) GetCharacterWeaponStat(ctx context.Context, cwID int32) (CharacterWeaponStat, error) {
-	row := q.db.QueryRowContext(ctx, getCharacterWeaponStat, cwID)
+	row := q.db.QueryRow(ctx, getCharacterWeaponStat, cwID)
 	var i CharacterWeaponStat
 	err := row.Scan(
 		&i.CwID,
@@ -96,7 +96,7 @@ ORDER BY
 `
 
 func (q *Queries) ListCharacterWeaponStats(ctx context.Context) ([]CharacterWeaponStat, error) {
-	rows, err := q.db.QueryContext(ctx, listCharacterWeaponStats)
+	rows, err := q.db.Query(ctx, listCharacterWeaponStats)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +118,6 @@ func (q *Queries) ListCharacterWeaponStats(ctx context.Context) ([]CharacterWeap
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -140,16 +137,16 @@ WHERE
 `
 
 type PatchCharacterWeaponStatParams struct {
-	CwID int32
-	Atk  int32
-	Def  int32
-	Cc   int32
-	Spd  int32
-	Sup  int32
+	CwID int32 `json:"cw_id"`
+	Atk  int32 `json:"atk"`
+	Def  int32 `json:"def"`
+	Cc   int32 `json:"cc"`
+	Spd  int32 `json:"spd"`
+	Sup  int32 `json:"sup"`
 }
 
 func (q *Queries) PatchCharacterWeaponStat(ctx context.Context, arg PatchCharacterWeaponStatParams) error {
-	_, err := q.db.ExecContext(ctx, patchCharacterWeaponStat,
+	_, err := q.db.Exec(ctx, patchCharacterWeaponStat,
 		arg.CwID,
 		arg.Atk,
 		arg.Def,

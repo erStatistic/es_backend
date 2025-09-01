@@ -7,7 +7,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createGame = `-- name: CreateGame :one
@@ -20,12 +21,12 @@ RETURNING
 `
 
 type CreateGameParams struct {
-	GameCode   int64
-	AverageMmr int32
+	GameCode   int64 `json:"game_code"`
+	AverageMmr int32 `json:"average_mmr"`
 }
 
 func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, error) {
-	row := q.db.QueryRowContext(ctx, createGame, arg.GameCode, arg.AverageMmr)
+	row := q.db.QueryRow(ctx, createGame, arg.GameCode, arg.AverageMmr)
 	var i Game
 	err := row.Scan(
 		&i.ID,
@@ -45,7 +46,7 @@ WHERE
 `
 
 func (q *Queries) DeleteGame(ctx context.Context, gameCode int64) error {
-	_, err := q.db.ExecContext(ctx, deleteGame, gameCode)
+	_, err := q.db.Exec(ctx, deleteGame, gameCode)
 	return err
 }
 
@@ -59,7 +60,7 @@ WHERE
 `
 
 func (q *Queries) GetGame(ctx context.Context, gameCode int64) (Game, error) {
-	row := q.db.QueryRowContext(ctx, getGame, gameCode)
+	row := q.db.QueryRow(ctx, getGame, gameCode)
 	var i Game
 	err := row.Scan(
 		&i.ID,
@@ -82,7 +83,7 @@ ORDER BY
 `
 
 func (q *Queries) ListGames(ctx context.Context) ([]Game, error) {
-	rows, err := q.db.QueryContext(ctx, listGames)
+	rows, err := q.db.Query(ctx, listGames)
 	if err != nil {
 		return nil, err
 	}
@@ -102,9 +103,6 @@ func (q *Queries) ListGames(ctx context.Context) ([]Game, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -121,12 +119,12 @@ WHERE
 `
 
 type PatchGameParams struct {
-	GameCode   int64
-	StartedAt  sql.NullTime
-	AverageMmr int32
+	GameCode   int64              `json:"game_code"`
+	StartedAt  pgtype.Timestamptz `json:"started_at"`
+	AverageMmr int32              `json:"average_mmr"`
 }
 
 func (q *Queries) PatchGame(ctx context.Context, arg PatchGameParams) error {
-	_, err := q.db.ExecContext(ctx, patchGame, arg.GameCode, arg.StartedAt, arg.AverageMmr)
+	_, err := q.db.Exec(ctx, patchGame, arg.GameCode, arg.StartedAt, arg.AverageMmr)
 	return err
 }

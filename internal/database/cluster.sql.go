@@ -19,12 +19,12 @@ RETURNING
 `
 
 type CreateClusterParams struct {
-	Name     string
-	ImageUrl string
+	Name     string `json:"name"`
+	ImageUrl string `json:"image_url"`
 }
 
 func (q *Queries) CreateCluster(ctx context.Context, arg CreateClusterParams) (Cluster, error) {
-	row := q.db.QueryRowContext(ctx, createCluster, arg.Name, arg.ImageUrl)
+	row := q.db.QueryRow(ctx, createCluster, arg.Name, arg.ImageUrl)
 	var i Cluster
 	err := row.Scan(
 		&i.ID,
@@ -43,7 +43,7 @@ WHERE
 `
 
 func (q *Queries) DeleteCluster(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCluster, id)
+	_, err := q.db.Exec(ctx, deleteCluster, id)
 	return err
 }
 
@@ -57,7 +57,7 @@ WHERE
 `
 
 func (q *Queries) GetCluster(ctx context.Context, id int32) (Cluster, error) {
-	row := q.db.QueryRowContext(ctx, getCluster, id)
+	row := q.db.QueryRow(ctx, getCluster, id)
 	var i Cluster
 	err := row.Scan(
 		&i.ID,
@@ -79,7 +79,7 @@ ORDER BY
 `
 
 func (q *Queries) ListClusters(ctx context.Context) ([]Cluster, error) {
-	rows, err := q.db.QueryContext(ctx, listClusters)
+	rows, err := q.db.Query(ctx, listClusters)
 	if err != nil {
 		return nil, err
 	}
@@ -98,9 +98,6 @@ func (q *Queries) ListClusters(ctx context.Context) ([]Cluster, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -117,12 +114,12 @@ WHERE
 `
 
 type PatchClusterParams struct {
-	ID       int32
-	ImageUrl string
-	Name     string
+	ID       int32  `json:"id"`
+	ImageUrl string `json:"image_url"`
+	Name     string `json:"name"`
 }
 
 func (q *Queries) PatchCluster(ctx context.Context, arg PatchClusterParams) error {
-	_, err := q.db.ExecContext(ctx, patchCluster, arg.ID, arg.ImageUrl, arg.Name)
+	_, err := q.db.Exec(ctx, patchCluster, arg.ID, arg.ImageUrl, arg.Name)
 	return err
 }

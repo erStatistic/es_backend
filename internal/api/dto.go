@@ -41,3 +41,25 @@ type GameTeamDTO struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+type TierDTO struct {
+	ID        int32     `json:"id"`
+	Name      string    `json:"name"`
+	Rank      int32     `json:"rank"`
+	ImageUrl  string    `json:"imageUrl"`
+	MmrMin    int32     `json:"mmr_min"`
+	MmrMax    int32     `json:"mmr_max"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type TimeDTO struct {
+	ID        int32     `json:"id"`
+	No        int32     `json:"no"`
+	Name      string    `json:"name"`
+	Seconds   int32     `json:"seconds"`
+	StartTime int32     `json:"startTime"` // time_range 하한 (포함, [start,end))
+	EndTime   int32     `json:"endTime"`   // time_range 상한 (제외, [start,end))
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
