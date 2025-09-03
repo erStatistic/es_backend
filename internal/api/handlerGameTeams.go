@@ -14,21 +14,13 @@ import (
 func (cfg *Config) GameTeamCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.Log.Info("GameTeamCtx")
-		id := chi.URLParam(r, "teamId")
-		TeamID, err := strconv.Atoi(id)
+		id := chi.URLParam(r, "gtId")
+		GameTeamID, err := strconv.Atoi(id)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		GameID, err := strconv.Atoi(chi.URLParam(r, "gameId"))
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
-			return
-		}
-		GameTeam, err := cfg.DB.GetGameTeam(r.Context(), database.GetGameTeamParams{
-			GameID: int64(GameID),
-			TeamID: int32(TeamID),
-		})
+		GameTeam, err := cfg.DB.GetGameTeamByGameID(r.Context(), int64(GameTeamID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -82,13 +74,33 @@ func (cfg *Config) CreateGameTeam(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *Config) GetGameTeam(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting game team")
-	ctx := r.Context()
-	gameTeam, ok := ctx.Value(GameTeamKey).(*database.GameTeam)
-	if !ok {
-		respondWithError(w, http.StatusUnprocessableEntity, "Game team not found", nil)
+
+	id := chi.URLParam(r, "teamId")
+	TeamID, err := strconv.Atoi(id)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 		return
 	}
-	respondWithJson(w, http.StatusOK, "Game team retrieved", toGameTeamDTO(*gameTeam))
+	GameID, err := strconv.Atoi(chi.URLParam(r, "gameId"))
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
+		return
+	}
+	GameTeam, err := cfg.DB.GetGameTeam(r.Context(), database.GetGameTeamParams{
+		GameID: int64(GameID),
+		TeamID: int32(TeamID),
+	})
+	if err != nil {
+		var msg string
+		if err == sql.ErrNoRows {
+			msg = "GameTeam not found"
+		} else {
+			msg = "Failed to get game team"
+		}
+		respondWithError(w, http.StatusNotFound, msg, err)
+		return
+	}
+	respondWithJson(w, http.StatusOK, "Game team retrieved", toGameTeamDTO(GameTeam))
 }
 
 func (cfg *Config) ListGameTeams(w http.ResponseWriter, r *http.Request) {
@@ -103,6 +115,17 @@ func (cfg *Config) ListGameTeams(w http.ResponseWriter, r *http.Request) {
 		gameTeams = []database.GameTeam{}
 	}
 	respondWithJson(w, http.StatusOK, "Game teams retrieved", Map(gameTeams, toGameTeamDTO))
+}
+
+func (cfg *Config) GetGameTeamByID(w http.ResponseWriter, r *http.Request) {
+	cfg.Log.Info("Getting game team by id")
+	ctx := r.Context()
+	gameTeam, ok := ctx.Value(GameTeamKey).(*database.GameTeam)
+	if !ok {
+		respondWithError(w, http.StatusUnprocessableEntity, "Game team not found", nil)
+		return
+	}
+	respondWithJson(w, http.StatusOK, "Game team retrieved", toGameTeamDTO(*gameTeam))
 }
 
 func (cfg *Config) PatchGameTeam(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +232,7 @@ func (cfg *Config) GameRankCtx(next http.Handler) http.Handler {
 	})
 }
 
-func (cfg *Config) GetListGameRank(w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) GetListGameTeamRank(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Getting list game rank")
 	ctx := r.Context()
 	gameTeams, ok := ctx.Value(GameTeamKey).([]database.GameTeam)
@@ -218,4 +241,14 @@ func (cfg *Config) GetListGameRank(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJson(w, http.StatusOK, "Game teams by game rank retrieved", Map(gameTeams, toGameTeamDTO))
+}
+
+func (cfg *Config) TruncateGameTeams(w http.ResponseWriter, r *http.Request) {
+	cfg.Log.Info("Truncating game teams")
+	err := cfg.DB.TruncateGameTeams(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to truncate game teams", err)
+		return
+	}
+	respondWithJson(w, http.StatusOK, "Game teams truncated", nil)
 }

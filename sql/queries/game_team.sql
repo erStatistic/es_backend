@@ -66,3 +66,6 @@ SET
     total_time = $9
 WHERE
     id = $1;
+
+-- name: TruncateGameTeams :exec
+TRUNCATE TABLE game_teams;

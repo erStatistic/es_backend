@@ -142,3 +142,13 @@ func (cfg *Config) DeleteGame(w http.ResponseWriter, r *http.Request) {
 	}
 	respondWithJson(w, http.StatusOK, "Game deleted", nil)
 }
+
+func (cfg *Config) TruncateGames(w http.ResponseWriter, r *http.Request) {
+	cfg.Log.Info("Truncating games")
+	err := cfg.DB.TruncateGames(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to truncate games", err)
+		return
+	}
+	respondWithJson(w, http.StatusOK, "Games truncated", nil)
+}

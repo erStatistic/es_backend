@@ -125,35 +125,43 @@ func (cfg *Config) Routes() http.Handler {
 		r.Route("/games", func(r chi.Router) {
 			r.Get("/", cfg.ListGames)
 			r.Post("/", cfg.CreateGame)
-			r.Route("/ranks", func(r chi.Router) {
-				r.Route("/{rank}", func(r chi.Router) {
-					r.Use(cfg.GameRankCtx)
-					r.Get("/", cfg.GetListGameRank)
-				})
-			})
+			r.Delete("/", cfg.TruncateGames) // Truncate Games postman
 			r.Route("/{gameCode}", func(r chi.Router) {
 				r.Use(cfg.GameCtx)
 				r.Get("/", cfg.GetGame)
 				r.Patch("/", cfg.PatchGame)
 				r.Delete("/", cfg.DeleteGame)
 				r.Route("/teams", func(r chi.Router) {
-					r.Get("/", cfg.ListGameTeams)
-					r.Post("/", cfg.CreateGameTeam)
 					r.Route("/{teamId}", func(r chi.Router) {
-						r.Use(cfg.GameTeamCtx)
 						r.Get("/", cfg.GetGameTeam)
-						r.Patch("/", cfg.PatchGameTeam)
-						r.Delete("/", cfg.DeleteGameTeam)
-						r.Route("/cws", func(r chi.Router) {
-							r.Get("/", cfg.ListGameSameTeamCWs)
-						})
 					})
+				})
+			})
+		})
+		r.Route("/gameTeams", func(r chi.Router) {
+			r.Post("/", cfg.CreateGameTeam)
+			r.Get("/", cfg.ListGameTeams)
+			r.Delete("/", cfg.TruncateGameTeams) // Truncate GameTeams postman
+			r.Route("/{gtId}", func(r chi.Router) {
+				r.Use(cfg.GameTeamCtx)
+				r.Get("/", cfg.GetGameTeamByID)
+				r.Patch("/", cfg.PatchGameTeam)
+				r.Delete("/", cfg.DeleteGameTeam)
+				r.Route("/cws", func(r chi.Router) {
+					r.Get("/", cfg.ListGameSameTeamCWs)
+				})
+			})
+			r.Route("/ranks", func(r chi.Router) {
+				r.Route("/{rank}", func(r chi.Router) {
+					r.Use(cfg.GameRankCtx)
+					r.Get("/", cfg.GetListGameTeamRank)
 				})
 			})
 		})
 		r.Route("/gameTeamCws", func(r chi.Router) {
 			r.Get("/", cfg.ListGameTeamCWs)
 			r.Post("/", cfg.CreateGameTeamCW)
+			r.Delete("/", cfg.TruncateGameTeamCWs) // Truncate GameTeamcws postman
 			r.Route("/{gtcwId}", func(r chi.Router) {
 				r.Use(cfg.GameTeamCWCtx)
 				r.Get("/", cfg.GetGameTeamCW)

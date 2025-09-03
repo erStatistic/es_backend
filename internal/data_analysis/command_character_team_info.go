@@ -32,6 +32,7 @@ func commandCharacterTeamInfo(cfg *Config, args ...string) error {
 
 	var (
 		allofteams = map[int][]TeamInfo{}
+		allofgames = map[int]string{}
 		mu         sync.Mutex
 		wg         sync.WaitGroup
 		sem        = make(chan struct{}, 5)
@@ -43,13 +44,14 @@ func commandCharacterTeamInfo(cfg *Config, args ...string) error {
 		go func(gid int) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			teams := getTeamInfo(cfg, gid)
+			teams, game := getTeamInfo(cfg, gid)
 			mu.Lock()
 			for rank, team := range teams {
 				if len(team.Users) == 3 {
 					allofteams[rank] = append(allofteams[rank], team)
 				}
 			}
+			allofgames[gid] = game[gid]
 			mu.Unlock()
 
 		}(gameID)
@@ -62,6 +64,10 @@ func commandCharacterTeamInfo(cfg *Config, args ...string) error {
 
 	if err := saveIDsToFile("./internal/output/games/user_ids.txt", userIDs); err != nil {
 		return fmt.Errorf("failed to save user IDs: %w", err)
+	}
+
+	if err := saveGamesToCSV("./internal/output/games/games.csv", allofgames); err != nil {
+		return fmt.Errorf("failed to save games to CSV: %w", err)
 	}
 
 	if err := saveIDsToFile("./internal/output/games/game_ids.txt", gameIDs); err != nil {
@@ -81,6 +87,7 @@ type TeamInfo struct {
 	TotalTime      int
 	mmrGainInGame  int
 	AverageMmr     int
+	StartTime      string
 }
 
 type User struct {
@@ -90,14 +97,15 @@ type User struct {
 	CurrentMmr   int
 }
 
-func getTeamInfo(cfg *Config, gameID int) map[int]TeamInfo {
+func getTeamInfo(cfg *Config, gameID int) (map[int]TeamInfo, map[int]string) {
 	fmt.Printf("Getting team info for game ID: %d\n", gameID)
 	usergames, err := cfg.EsapiClient.GameByGameID(gameID)
 	if err != nil {
 		fmt.Printf("Failed to get game by game ID: %v\n", err)
-		return nil
+		return nil, nil
 	}
 	teams := map[int]TeamInfo{}
+	games := map[int]string{}
 	for _, game := range usergames {
 		rank := game.GameRank
 		charNum := game.CharacterNum
@@ -106,6 +114,7 @@ func getTeamInfo(cfg *Config, gameID int) map[int]TeamInfo {
 		gameID := game.GameID
 		credits := getMonsterCredits(game)
 		averageMMr := game.MmrAvg
+		startTime := game.StartDtm
 
 		team := teams[rank]
 
@@ -140,7 +149,9 @@ func getTeamInfo(cfg *Config, gameID int) map[int]TeamInfo {
 		team.TotalTime = game.TotalTime
 		team.mmrGainInGame = game.MmrGainInGame
 		team.AverageMmr = averageMMr
+		team.StartTime = startTime
 		teams[rank] = team
+		games[gameID] = game.StartDtm
 	}
 	for rank, team := range teams {
 
@@ -161,7 +172,7 @@ func getTeamInfo(cfg *Config, gameID int) map[int]TeamInfo {
 			teams[rank] = team
 		}
 	}
-	return teams
+	return teams, games
 }
 
 func getItemInfo(cfg *Config, WeaponItemID int) *string {
@@ -202,6 +213,33 @@ func ToPGIntArray(nums []int) string {
 	return b.String()
 }
 
+func saveGamesToCSV(filename string, allofgames map[int]string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	header := []string{"game_id", "start_time"}
+	if err := writer.Write(header); err != nil {
+		return err
+	}
+
+	for gid, startTime := range allofgames {
+		record := []string{
+			fmt.Sprintf("%d", gid),
+			startTime,
+		}
+		if err := writer.Write(record); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	file, err := os.Create(filename)
 	if err != nil {
@@ -212,7 +250,7 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"game_rank", "game_code", "game_avg_mmr", "team_num", "characater_nums", "weapon_nums", "character_mmrs", "team_kills", "monster_credits", "total_time", "team_avg_mmr", "mmr_gain_in_game"}
+	header := []string{"game_rank", "game_code", "game_avg_mmr", "team_num", "character_nums", "weapon_nums", "character_mmrs", "team_kills", "monster_credits", "total_time", "team_avg_mmr", "mmr_gain_in_game"}
 	if err := writer.Write(header); err != nil {
 		return err
 	}

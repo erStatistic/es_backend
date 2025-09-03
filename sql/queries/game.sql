@@ -1,8 +1,8 @@
 -- name: CreateGame :one
 INSERT INTO
-    games (game_code, average_mmr)
+    games (game_code, average_mmr, started_at)
 VALUES
-    ($1, $2)
+    ($1, $2, $3)
 RETURNING
     *;
 
@@ -34,3 +34,6 @@ WHERE
 DELETE FROM games
 WHERE
     game_code = $1;
+
+-- name: TruncateGames :exec
+TRUNCATE TABLE games;

@@ -162,3 +162,13 @@ func (cfg *Config) DeleteGameTeamCW(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJson(w, http.StatusOK, "GameTeamCW deleted", nil)
 }
+
+func (cfg *Config) TruncateGameTeamCWs(w http.ResponseWriter, r *http.Request) {
+	cfg.Log.Info("Truncating game team cws")
+	err := cfg.DB.TruncateGameTeamCWs(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to truncate game team cws", err)
+		return
+	}
+	respondWithJson(w, http.StatusOK, "Game team cws truncated", nil)
+}

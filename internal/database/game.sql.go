@@ -13,20 +13,21 @@ import (
 
 const createGame = `-- name: CreateGame :one
 INSERT INTO
-    games (game_code, average_mmr)
+    games (game_code, average_mmr, started_at)
 VALUES
-    ($1, $2)
+    ($1, $2, $3)
 RETURNING
     id, game_code, started_at, average_mmr, created_at, updated_at
 `
 
 type CreateGameParams struct {
-	GameCode   int64 `json:"game_code"`
-	AverageMmr int32 `json:"average_mmr"`
+	GameCode   int64              `json:"game_code"`
+	AverageMmr int32              `json:"average_mmr"`
+	StartedAt  pgtype.Timestamptz `json:"started_at"`
 }
 
 func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, error) {
-	row := q.db.QueryRow(ctx, createGame, arg.GameCode, arg.AverageMmr)
+	row := q.db.QueryRow(ctx, createGame, arg.GameCode, arg.AverageMmr, arg.StartedAt)
 	var i Game
 	err := row.Scan(
 		&i.ID,
@@ -126,5 +127,14 @@ type PatchGameParams struct {
 
 func (q *Queries) PatchGame(ctx context.Context, arg PatchGameParams) error {
 	_, err := q.db.Exec(ctx, patchGame, arg.GameCode, arg.StartedAt, arg.AverageMmr)
+	return err
+}
+
+const truncateGames = `-- name: TruncateGames :exec
+TRUNCATE TABLE games
+`
+
+func (q *Queries) TruncateGames(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, truncateGames)
 	return err
 }

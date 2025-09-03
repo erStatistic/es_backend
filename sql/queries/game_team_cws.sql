@@ -43,3 +43,6 @@ SET
     mmr = $3
 WHERE
     id = $1;
+
+-- name: TruncateGameTeamCWs :exec
+TRUNCATE TABLE game_team_cws;

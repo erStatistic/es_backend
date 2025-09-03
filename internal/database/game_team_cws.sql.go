@@ -164,3 +164,12 @@ func (q *Queries) PatchGameTeamCW(ctx context.Context, arg PatchGameTeamCWParams
 	_, err := q.db.Exec(ctx, patchGameTeamCW, arg.GameTeamID, arg.CwID, arg.Mmr)
 	return err
 }
+
+const truncateGameTeamCWs = `-- name: TruncateGameTeamCWs :exec
+TRUNCATE TABLE game_team_cws
+`
+
+func (q *Queries) TruncateGameTeamCWs(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, truncateGameTeamCWs)
+	return err
+}
