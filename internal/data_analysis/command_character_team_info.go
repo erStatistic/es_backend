@@ -32,7 +32,7 @@ func commandCharacterTeamInfo(cfg *Config, args ...string) error {
 
 	var (
 		allofteams = map[int][]TeamInfo{}
-		allofgames = map[int]string{}
+		allofgames = map[int]GameInfo{}
 		mu         sync.Mutex
 		wg         sync.WaitGroup
 		sem        = make(chan struct{}, 5)
@@ -97,7 +97,12 @@ type User struct {
 	CurrentMmr   int
 }
 
-func getTeamInfo(cfg *Config, gameID int) (map[int]TeamInfo, map[int]string) {
+type GameInfo struct {
+	StartTime  string
+	AverageMmr int
+}
+
+func getTeamInfo(cfg *Config, gameID int) (map[int]TeamInfo, map[int]GameInfo) {
 	fmt.Printf("Getting team info for game ID: %d\n", gameID)
 	usergames, err := cfg.EsapiClient.GameByGameID(gameID)
 	if err != nil {
@@ -105,7 +110,7 @@ func getTeamInfo(cfg *Config, gameID int) (map[int]TeamInfo, map[int]string) {
 		return nil, nil
 	}
 	teams := map[int]TeamInfo{}
-	games := map[int]string{}
+	games := map[int]GameInfo{}
 	for _, game := range usergames {
 		rank := game.GameRank
 		charNum := game.CharacterNum
@@ -151,7 +156,10 @@ func getTeamInfo(cfg *Config, gameID int) (map[int]TeamInfo, map[int]string) {
 		team.AverageMmr = averageMMr
 		team.StartTime = startTime
 		teams[rank] = team
-		games[gameID] = game.StartDtm
+		gameInfo := GameInfo{}
+		gameInfo.StartTime = startTime
+		gameInfo.AverageMmr = averageMMr
+		games[gameID] = gameInfo
 	}
 	for rank, team := range teams {
 
@@ -213,7 +221,7 @@ func ToPGIntArray(nums []int) string {
 	return b.String()
 }
 
-func saveGamesToCSV(filename string, allofgames map[int]string) error {
+func saveGamesToCSV(filename string, allofgames map[int]GameInfo) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -223,15 +231,16 @@ func saveGamesToCSV(filename string, allofgames map[int]string) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"game_id", "start_time"}
+	header := []string{"game_code", "started_at", "game_avg_mmr"}
 	if err := writer.Write(header); err != nil {
 		return err
 	}
 
-	for gid, startTime := range allofgames {
+	for gid, gameInfo := range allofgames {
 		record := []string{
 			fmt.Sprintf("%d", gid),
-			startTime,
+			gameInfo.StartTime,
+			fmt.Sprintf("%d", gameInfo.AverageMmr),
 		}
 		if err := writer.Write(record); err != nil {
 			return err

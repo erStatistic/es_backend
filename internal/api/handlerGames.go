@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/kaeba0616/es_backend/internal/database"
 )
 
@@ -41,8 +42,9 @@ func (cfg *Config) GameCtx(next http.Handler) http.Handler {
 func (cfg *Config) CreateGame(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating game")
 	type parameters struct {
-		GameCode   int64 `json:"game_code"`
-		AverageMmr int32 `json:"average_mmr"`
+		GameCode   int64              `json:"game_code"`
+		AverageMmr int32              `json:"average_mmr"`
+		StartedAt  pgtype.Timestamptz `json:"started_at"`
 	}
 
 	params := parameters{}
@@ -54,6 +56,7 @@ func (cfg *Config) CreateGame(w http.ResponseWriter, r *http.Request) {
 	createdGame, err := cfg.DB.CreateGame(r.Context(), database.CreateGameParams{
 		GameCode:   params.GameCode,
 		AverageMmr: params.AverageMmr,
+		StartedAt:  params.StartedAt,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create game", err)
@@ -97,6 +100,7 @@ func (cfg *Config) PatchGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type parameters struct {
+		GameCode   int64     `json:"game_code"`
 		AverageMmr int32     `json:"average_mmr"`
 		StartedAt  time.Time `json:"started_at"`
 	}
@@ -107,9 +111,14 @@ func (cfg *Config) PatchGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if params.GameCode != 0 {
+		game.GameCode = params.GameCode
+	}
+
 	if params.AverageMmr != 0 {
 		game.AverageMmr = params.AverageMmr
 	}
+
 	if !params.StartedAt.IsZero() {
 		game.StartedAt.Time = params.StartedAt
 	}
