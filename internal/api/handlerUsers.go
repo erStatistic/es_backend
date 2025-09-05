@@ -64,6 +64,21 @@ func (cfg *Config) GetUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, "User retrieved", user)
 }
 
+func (cfg *Config) GetUserByNickname(w http.ResponseWriter, r *http.Request) {
+	cfg.Log.Info("Getting user by nickname")
+
+	q := r.URL.Query()
+	nickname := q.Get("nickname")
+
+	user, err := cfg.DB.GetUserByNickname(r.Context(), nickname)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to get user by nickname", err)
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, "User retrieved", user)
+}
+
 func (cfg *Config) CreateUser(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating user")
 	type parameters struct {

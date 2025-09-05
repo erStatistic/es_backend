@@ -22,6 +22,7 @@ func (cfg *Config) Routes() http.Handler {
 				r.Delete("/", cfg.DeleteUser)
 				r.Get("/top3", cfg.ListUserTop3)
 			})
+			r.Get("/search", cfg.GetUserByNickname)
 			r.Route("/stats", func(r chi.Router) {
 				r.Post("/", cfg.CreateUserStat)
 				r.Get("/", cfg.ListUserStat)

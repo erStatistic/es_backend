@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -42,9 +41,9 @@ func (cfg *Config) GameCtx(next http.Handler) http.Handler {
 func (cfg *Config) CreateGame(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating game")
 	type parameters struct {
-		GameCode   int64              `json:"game_code"`
-		AverageMmr int32              `json:"average_mmr"`
-		StartedAt  pgtype.Timestamptz `json:"started_at"`
+		GameCode   int64  `json:"game_code"`
+		AverageMmr int32  `json:"average_mmr"`
+		StartedAt  string `json:"started_at"`
 	}
 
 	params := parameters{}
@@ -53,10 +52,18 @@ func (cfg *Config) CreateGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	t, err := parseTS(params.StartedAt)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Failed to parse started_at", err)
+		return
+	}
+
+	startedAt := pgtype.Timestamptz{Time: t, Valid: true}
+
 	createdGame, err := cfg.DB.CreateGame(r.Context(), database.CreateGameParams{
 		GameCode:   params.GameCode,
 		AverageMmr: params.AverageMmr,
-		StartedAt:  params.StartedAt,
+		StartedAt:  startedAt,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create game", err)
@@ -100,9 +107,9 @@ func (cfg *Config) PatchGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type parameters struct {
-		GameCode   int64     `json:"game_code"`
-		AverageMmr int32     `json:"average_mmr"`
-		StartedAt  time.Time `json:"started_at"`
+		GameCode   int64  `json:"game_code"`
+		AverageMmr int32  `json:"average_mmr"`
+		StartedAt  string `json:"started_at"`
 	}
 
 	params := parameters{}
@@ -119,8 +126,14 @@ func (cfg *Config) PatchGame(w http.ResponseWriter, r *http.Request) {
 		game.AverageMmr = params.AverageMmr
 	}
 
-	if !params.StartedAt.IsZero() {
-		game.StartedAt.Time = params.StartedAt
+	if params.StartedAt != "" {
+		t, err := parseTS(params.StartedAt)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Failed to parse started_at", err)
+			return
+		}
+		game.StartedAt.Time = t
+		game.StartedAt.Valid = true
 	}
 
 	err := cfg.DB.PatchGame(r.Context(), database.PatchGameParams{

@@ -123,3 +123,35 @@ func makeInt4Range(min *int32, max *int32) pgtype.Range[pgtype.Int4] {
 
 	return r
 }
+func parseTS(s string) (time.Time, error) {
+	// 1) RFC3339(+09:00) 시도
+	if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+		return t, nil
+	}
+	// 2) +0900 형식 지원
+	layouts := []string{
+		"2006-01-02T15:04:05.000-0700",
+		"2006-01-02T15:04:05-0700",
+		"2006-01-02 15:04:05-0700",
+	}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, nil
+		}
+	}
+	// 3) 오프셋 끝에 콜론 보정해서 RFC3339 재시도 (예: +0900 -> +09:00)
+	s2 := addColonToOffset(s)
+	return time.Parse(time.RFC3339Nano, s2)
+}
+
+func addColonToOffset(s string) string {
+	// 끝이 +HHMM 또는 -HHMM 이면 +HH:MM 으로 바꿔줌
+	n := len(s)
+	if n >= 5 {
+		off := s[n-5:]
+		if (off[0] == '+' || off[0] == '-') && off[3] != ':' {
+			return s[:n-2] + ":" + s[n-2:]
+		}
+	}
+	return s
+}
