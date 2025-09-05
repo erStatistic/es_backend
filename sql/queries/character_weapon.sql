@@ -155,3 +155,12 @@ FROM
     JOIN clusters cu ON cu.id = cw.cluster_id
 WHERE
     cw.id = $1;
+
+-- name: CWByCharacterIDAndWeaponID :one
+SELECT
+    *
+FROM
+    character_weapons
+WHERE
+    character_id = $1
+    AND weapon_id = $2;

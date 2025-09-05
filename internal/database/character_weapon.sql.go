@@ -9,6 +9,36 @@ import (
 	"context"
 )
 
+const cWByCharacterIDAndWeaponID = `-- name: CWByCharacterIDAndWeaponID :one
+SELECT
+    id, character_id, weapon_id, position_id, cluster_id, created_at, updated_at
+FROM
+    character_weapons
+WHERE
+    character_id = $1
+    AND weapon_id = $2
+`
+
+type CWByCharacterIDAndWeaponIDParams struct {
+	CharacterID int32 `json:"character_id"`
+	WeaponID    int32 `json:"weapon_id"`
+}
+
+func (q *Queries) CWByCharacterIDAndWeaponID(ctx context.Context, arg CWByCharacterIDAndWeaponIDParams) (CharacterWeapon, error) {
+	row := q.db.QueryRow(ctx, cWByCharacterIDAndWeaponID, arg.CharacterID, arg.WeaponID)
+	var i CharacterWeapon
+	err := row.Scan(
+		&i.ID,
+		&i.CharacterID,
+		&i.WeaponID,
+		&i.PositionID,
+		&i.ClusterID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createCharacterWeapon = `-- name: CreateCharacterWeapon :one
 INSERT INTO
     character_weapons (character_id, weapon_id, position_id, cluster_id)

@@ -34,9 +34,11 @@ func (cfg *Config) GameTeamCWCtx(next http.Handler) http.Handler {
 func (cfg *Config) CreateGameTeamCW(w http.ResponseWriter, r *http.Request) {
 	cfg.Log.Info("Creating GameTeamCW")
 	type parameters struct {
-		CwID       int32 `json:"cw_id"`
-		GameTeamID int32 `json:"gameteam_id"`
-		Mmr        int32 `json:"mmr"`
+		CharacterID int32 `json:"character_id"`
+		WeaponID    int32 `json:"weapon_id"`
+		GameID      int64 `json:"game_id"`
+		TeamID      int32 `json:"team_id"`
+		Mmr         int32 `json:"mmr"`
 	}
 
 	params := parameters{}
@@ -45,9 +47,28 @@ func (cfg *Config) CreateGameTeamCW(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	GameTeam, err := cfg.DB.GetGameTeam(r.Context(), database.GetGameTeamParams{
+		GameID: params.GameID,
+		TeamID: params.TeamID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to get GameTeam", err)
+		return
+	}
+
+	CW, err := cfg.DB.CWByCharacterIDAndWeaponID(r.Context(), database.CWByCharacterIDAndWeaponIDParams{
+		CharacterID: params.CharacterID,
+		WeaponID:    params.WeaponID,
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to get CW", err)
+		return
+	}
+
 	createdGameTeamCW, err := cfg.DB.CreateGameTeamCW(r.Context(), database.CreateGameTeamCWParams{
-		GameTeamID: params.GameTeamID,
-		CwID:       params.CwID,
+		GameTeamID: GameTeam.ID,
+		CwID:       CW.ID,
 		Mmr:        params.Mmr,
 	})
 	if err != nil {
@@ -56,6 +77,56 @@ func (cfg *Config) CreateGameTeamCW(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusOK, "GameTeamCW retrieved", createdGameTeamCW)
+}
+func (cfg *Config) CreateGameTeamCWList(w http.ResponseWriter, r *http.Request) {
+	cfg.Log.Info("Creating GameTeamCWList")
+	type parameters struct {
+		CharacterNums []int32 `json:"character_nums"`
+		WeaponNums    []int32 `json:"weapon_nums"`
+		GameCode      int64   `json:"game_code"`
+		TeamNum       int32   `json:"team_num"`
+		CharacterMmrs []int32 `json:"character_mmrs"`
+	}
+
+	params := parameters{}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
+		return
+	}
+
+	GameTeam, err := cfg.DB.GetGameTeam(r.Context(), database.GetGameTeamParams{
+		GameID: params.GameCode,
+		TeamID: params.TeamNum,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to get GameTeam", err)
+		return
+	}
+
+	var CreateGameTeamCWs []database.GameTeamCw
+	for i := range 3 {
+		CW, err := cfg.DB.CWByCharacterIDAndWeaponID(r.Context(), database.CWByCharacterIDAndWeaponIDParams{
+			CharacterID: params.CharacterNums[i],
+			WeaponID:    params.WeaponNums[i],
+		})
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Failed to get CW", err)
+			return
+		}
+		createdGameTeamCW, err := cfg.DB.CreateGameTeamCW(r.Context(), database.CreateGameTeamCWParams{
+			GameTeamID: GameTeam.ID,
+			CwID:       CW.ID,
+			Mmr:        params.CharacterMmrs[i],
+		})
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Failed to create GameTeamCW", err)
+			return
+		}
+		CreateGameTeamCWs = append(CreateGameTeamCWs, createdGameTeamCW)
+
+	}
+
+	respondWithJson(w, http.StatusOK, "GameTeamCW retrieved", CreateGameTeamCWs)
 }
 
 func (cfg *Config) ListGameTeamCWs(w http.ResponseWriter, r *http.Request) {

@@ -88,17 +88,6 @@ type Item struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
-type MvTrioTeam struct {
-	GameTeamID int32              `json:"game_team_id"`
-	StartedAt  pgtype.Timestamptz `json:"started_at"`
-	GameRank   int32              `json:"game_rank"`
-	GainedMmr  int32              `json:"gained_mmr"`
-	TeamAvgMmr int32              `json:"team_avg_mmr"`
-	TotalTime  int32              `json:"total_time"`
-	CwIds      interface{}        `json:"cw_ids"`
-	ClusterIds interface{}        `json:"cluster_ids"`
-}
-
 type Position struct {
 	ID        int32              `json:"id"`
 	Name      string             `json:"name"`

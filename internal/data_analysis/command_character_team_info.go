@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -205,21 +204,6 @@ func getMonsterCredits(game erapi.UserGame) int {
 	totalcredit := creditChicken + creditBoar + creditWolf + creditBear + creditBat + creditWildDog + int(creditRaven)
 	return totalcredit
 }
-func ToPGIntArray(nums []int) string {
-	if len(nums) == 0 {
-		return "{}"
-	}
-	var b strings.Builder
-	b.WriteByte('{')
-	for i, v := range nums {
-		if i > 0 {
-			b.WriteByte(',')
-		}
-		b.WriteString(strconv.Itoa(v))
-	}
-	b.WriteByte('}')
-	return b.String()
-}
 
 func saveGamesToCSV(filename string, allofgames map[int]GameInfo) error {
 	file, err := os.Create(filename)
@@ -278,15 +262,15 @@ func saveTeamInfoToCSV(filename string, allofteams map[int][]TeamInfo) error {
 				characterNums = append(characterNums, user.CharacterNum)
 				weaponNums = append(weaponNums, user.WeaponNum)
 			}
-			charNumsStr := ToPGIntArray(characterNums)
-			weaponNumsStr := ToPGIntArray(weaponNums)
+			charNumsStr := fmt.Sprintf("%v", characterNums)
+			weaponNumsStr := fmt.Sprintf("%v", weaponNums)
 			var characterMmrs []int
 			teamAvgMmr := 0
 			for _, user := range team.Users {
 				characterMmrs = append(characterMmrs, user.CurrentMmr)
 				teamAvgMmr += user.CurrentMmr
 			}
-			characterMmrsStr := ToPGIntArray(characterMmrs)
+			characterMmrsStr := fmt.Sprintf("%v", characterMmrs)
 			teamAvgMmr /= len(team.Users)
 			record := []string{
 				fmt.Sprintf("%d", rank),

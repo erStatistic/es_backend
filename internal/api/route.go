@@ -163,6 +163,7 @@ func (cfg *Config) Routes() http.Handler {
 			r.Get("/", cfg.ListGameTeamCWs)
 			r.Post("/", cfg.CreateGameTeamCW)
 			r.Delete("/", cfg.TruncateGameTeamCWs) // Truncate GameTeamcws postman
+			r.Post("/multi", cfg.CreateGameTeamCWList)
 			r.Route("/{gtcwId}", func(r chi.Router) {
 				r.Use(cfg.GameTeamCWCtx)
 				r.Get("/", cfg.GetGameTeamCW)
