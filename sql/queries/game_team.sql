@@ -20,6 +20,14 @@ DELETE FROM game_teams
 WHERE
     id = $1;
 
+-- name: GetGameTeamByID :one
+SELECT
+    *
+FROM
+    game_teams
+WHERE
+    id = $1;
+
 -- name: GetGameTeam :one
 SELECT
     *

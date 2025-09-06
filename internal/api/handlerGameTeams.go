@@ -20,7 +20,7 @@ func (cfg *Config) GameTeamCtx(next http.Handler) http.Handler {
 			respondWithError(w, http.StatusBadRequest, "Couldn't convert code to int", err)
 			return
 		}
-		GameTeam, err := cfg.DB.GetGameTeamByGameID(r.Context(), int64(GameTeamID))
+		GameTeam, err := cfg.DB.GetGameTeamByID(r.Context(), int32(GameTeamID))
 		if err != nil {
 			var msg string
 			if err == sql.ErrNoRows {
@@ -52,6 +52,7 @@ func (cfg *Config) CreateGameTeam(w http.ResponseWriter, r *http.Request) {
 
 	params := parameters{}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+
 		respondWithError(w, http.StatusBadRequest, "Failed to decode request Body", err)
 		return
 	}

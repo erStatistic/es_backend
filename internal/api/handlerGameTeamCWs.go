@@ -105,6 +105,10 @@ func (cfg *Config) CreateGameTeamCWList(w http.ResponseWriter, r *http.Request) 
 
 	var CreateGameTeamCWs []database.GameTeamCw
 	for i := range 3 {
+		if params.CharacterNums[i] == 27 {
+			params.WeaponNums[i] = 28
+		}
+
 		CW, err := cfg.DB.CWByCharacterIDAndWeaponID(r.Context(), database.CWByCharacterIDAndWeaponIDParams{
 			CharacterID: params.CharacterNums[i],
 			WeaponID:    params.WeaponNums[i],
@@ -122,6 +126,7 @@ func (cfg *Config) CreateGameTeamCWList(w http.ResponseWriter, r *http.Request) 
 			respondWithError(w, http.StatusInternalServerError, "Failed to create GameTeamCW", err)
 			return
 		}
+
 		CreateGameTeamCWs = append(CreateGameTeamCWs, createdGameTeamCW)
 
 	}

@@ -181,6 +181,14 @@ func (cfg *Config) Routes() http.Handler {
 				r.Delete("/", cfg.DeleteUserRoute)
 			})
 		})
+		r.Route("/analytics", func(r chi.Router) {
+			r.Get("/combos/clusters", cfg.GetClusterCombos)
+			r.Get("/cw/stats", cfg.GetCwStats)
+			r.Post("/comp/metrics", cfg.GetCompMetrics)
+			r.Get("/cw/{cwId}/trend", cfg.GetCwTrend)
+			r.Post("/mv/refresh", cfg.RefreshMvTrioTeams)
+		})
+
 	})
 
 	return r

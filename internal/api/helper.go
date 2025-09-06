@@ -1,11 +1,43 @@
 package rumiapi
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/kaeba0616/es_backend/internal/database"
 )
+
+func normalizeTier(s string) string {
+	if s == "" || s == "All" {
+		return ""
+	}
+	return s
+}
+func parseRFC3339Ptr(s string) (pgtype.Timestamptz, error) {
+	var t pgtype.Timestamptz
+	if s == "" {
+		t.Valid = false
+		return t, nil
+	}
+	v, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return t, err
+	}
+	t.Time = v
+	t.Valid = true
+	return t, nil
+}
+
+func parseIntDefault(s string, def int) int {
+	if s == "" {
+		return def
+	}
+	if v, err := strconv.Atoi(s); err == nil {
+		return v
+	}
+	return def
+}
 
 // pgtype.Timestamptz -> *time.Time (nullable 컬럼용)
 func tsToPtr(ts pgtype.Timestamptz) *time.Time {

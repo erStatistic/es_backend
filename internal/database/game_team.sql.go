@@ -155,6 +155,35 @@ func (q *Queries) GetGameTeamByGameID(ctx context.Context, gameID int64) ([]Game
 	return items, nil
 }
 
+const getGameTeamByID = `-- name: GetGameTeamByID :one
+SELECT
+    id, game_id, team_id, game_rank, team_kills, monster_credits, gained_mmr, team_avg_mmr, total_time, times_id, created_at, updated_at
+FROM
+    game_teams
+WHERE
+    id = $1
+`
+
+func (q *Queries) GetGameTeamByID(ctx context.Context, id int32) (GameTeam, error) {
+	row := q.db.QueryRow(ctx, getGameTeamByID, id)
+	var i GameTeam
+	err := row.Scan(
+		&i.ID,
+		&i.GameID,
+		&i.TeamID,
+		&i.GameRank,
+		&i.TeamKills,
+		&i.MonsterCredits,
+		&i.GainedMmr,
+		&i.TeamAvgMmr,
+		&i.TotalTime,
+		&i.TimesID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getListGameTeamsByGameRank = `-- name: GetListGameTeamsByGameRank :many
 SELECT
     id, game_id, team_id, game_rank, team_kills, monster_credits, gained_mmr, team_avg_mmr, total_time, times_id, created_at, updated_at
