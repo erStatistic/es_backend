@@ -54,8 +54,9 @@ WITH
     )
 SELECT
     h.cw_id,
-    cw.character_id,
-    cw.weapon_id,
+    -- ✅ ID 대신 이름을 내려줌
+    c.name_kr AS character_name_kr,
+    w.name_kr AS weapon_name_kr,
     cw.position_id,
     cw.cluster_id,
     h.team_count AS samples,
@@ -68,11 +69,13 @@ SELECT
         h.team_count::float8 / NULLIF(d.total_teams, 0.0),
         0.0
     ) AS pick_rate,
-    h.avg_mmr, -- ✅ gained_mmr 평균
+    h.avg_mmr, -- gained_mmr 평균
     h.avg_survival
 FROM
     cw_hits h
     JOIN character_weapons cw ON cw.id = h.cw_id
+    JOIN characters c ON c.id = cw.character_id -- ✅ 이름 조인
+    JOIN weapons w ON w.code = cw.weapon_id -- ✅ 이름 조인
     CROSS JOIN denom d
 ORDER BY
     win_rate DESC;

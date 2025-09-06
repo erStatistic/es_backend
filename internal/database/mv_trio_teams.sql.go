@@ -301,8 +301,9 @@ WITH
     )
 SELECT
     h.cw_id,
-    cw.character_id,
-    cw.weapon_id,
+    -- ✅ ID 대신 이름을 내려줌
+    c.name_kr AS character_name_kr,
+    w.name_kr AS weapon_name_kr,
     cw.position_id,
     cw.cluster_id,
     h.team_count AS samples,
@@ -315,11 +316,13 @@ SELECT
         h.team_count::float8 / NULLIF(d.total_teams, 0.0),
         0.0
     ) AS pick_rate,
-    h.avg_mmr, -- ✅ gained_mmr 평균
+    h.avg_mmr, -- gained_mmr 평균
     h.avg_survival
 FROM
     cw_hits h
     JOIN character_weapons cw ON cw.id = h.cw_id
+    JOIN characters c ON c.id = cw.character_id -- ✅ 이름 조인
+    JOIN weapons w ON w.code = cw.weapon_id -- ✅ 이름 조인
     CROSS JOIN denom d
 ORDER BY
     win_rate DESC
@@ -333,17 +336,17 @@ type GetCwStatsParams struct {
 }
 
 type GetCwStatsRow struct {
-	CwID        interface{} `json:"cw_id"`
-	CharacterID int32       `json:"character_id"`
-	WeaponID    int32       `json:"weapon_id"`
-	PositionID  int32       `json:"position_id"`
-	ClusterID   int32       `json:"cluster_id"`
-	Samples     int64       `json:"samples"`
-	Wins        int64       `json:"wins"`
-	WinRate     interface{} `json:"win_rate"`
-	PickRate    interface{} `json:"pick_rate"`
-	AvgMmr      float64     `json:"avg_mmr"`
-	AvgSurvival float64     `json:"avg_survival"`
+	CwID            interface{} `json:"cw_id"`
+	CharacterNameKr string      `json:"character_name_kr"`
+	WeaponNameKr    string      `json:"weapon_name_kr"`
+	PositionID      int32       `json:"position_id"`
+	ClusterID       int32       `json:"cluster_id"`
+	Samples         int64       `json:"samples"`
+	Wins            int64       `json:"wins"`
+	WinRate         interface{} `json:"win_rate"`
+	PickRate        interface{} `json:"pick_rate"`
+	AvgMmr          float64     `json:"avg_mmr"`
+	AvgSurvival     float64     `json:"avg_survival"`
 }
 
 func (q *Queries) GetCwStats(ctx context.Context, arg GetCwStatsParams) ([]GetCwStatsRow, error) {
@@ -362,8 +365,8 @@ func (q *Queries) GetCwStats(ctx context.Context, arg GetCwStatsParams) ([]GetCw
 		var i GetCwStatsRow
 		if err := rows.Scan(
 			&i.CwID,
-			&i.CharacterID,
-			&i.WeaponID,
+			&i.CharacterNameKr,
+			&i.WeaponNameKr,
 			&i.PositionID,
 			&i.ClusterID,
 			&i.Samples,
