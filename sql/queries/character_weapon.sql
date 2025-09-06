@@ -133,7 +133,6 @@ WHERE
 ORDER BY
     w.name_kr;
 
--- overview에 표시할 신원(캐릭/무기/포지션)만 가져오는 쿼리
 -- name: GetCwIdentity :one
 SELECT
     cw.id AS cw_id,

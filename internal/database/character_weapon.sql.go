@@ -147,7 +147,6 @@ type GetCwIdentityRow struct {
 	ClusterName string `json:"cluster_name"`
 }
 
-// overview에 표시할 신원(캐릭/무기/포지션)만 가져오는 쿼리
 func (q *Queries) GetCwIdentity(ctx context.Context, id int32) (GetCwIdentityRow, error) {
 	row := q.db.QueryRow(ctx, getCwIdentity, id)
 	var i GetCwIdentityRow

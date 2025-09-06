@@ -184,9 +184,13 @@ func (cfg *Config) Routes() http.Handler {
 		r.Route("/analytics", func(r chi.Router) {
 			r.Get("/combos/clusters", cfg.GetClusterCombos)
 			r.Get("/cw/stats", cfg.GetCwStats)
+			r.Get("/cw/top5", cfg.GetCwStatTop5)
 			r.Post("/comp/metrics", cfg.GetCompMetrics)
-			r.Get("/cw/{cwId}/trend", cfg.GetCwTrend)
 			r.Post("/mv/refresh", cfg.RefreshMvTrioTeams)
+			r.Route("/cw/{cwId}", func(r chi.Router) {
+				r.Get("/stats", cfg.GetCwStatsByCw)
+				r.Get("/trend", cfg.GetCwTrend)
+			})
 		})
 
 	})

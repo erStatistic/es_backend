@@ -329,10 +329,10 @@ type cwOverviewResp struct {
 		// summary는 아직 집계테이블 없으니 일단 스텁(0 / 빈배열)
 		Summary struct {
 			Games       int     `json:"games"`
-			WinRate     float64 `json:"winRate"`
-			PickRate    float64 `json:"pickRate"`
-			MMRGain     float64 `json:"mmrGain"`
-			SurvivalSec int     `json:"survivalSec"`
+			WinRate     any     `json:"winRate"`
+			PickRate    any     `json:"pickRate"`
+			MMRGain     any     `json:"mmrGain"`
+			SurvivalSec float64 `json:"survivalSec"`
 		} `json:"summary"`
 		// ✅ 여기 stats를 character_weapon_stats 에서 채운다
 		Stats struct {
@@ -425,11 +425,20 @@ func (cfg *Config) GetCwOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// summary 스텁(집계 테이블 생기면 교체)
-	out.Overview.Summary.Games = 0
-	out.Overview.Summary.WinRate = 0
-	out.Overview.Summary.PickRate = 0
-	out.Overview.Summary.MMRGain = 0
-	out.Overview.Summary.SurvivalSec = 0
+
+	summary, err := cfg.DB.GetOneCwStats(r.Context(), database.GetOneCwStatsParams{
+		ID: cwID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "DB error GetOneCwStats", err)
+		return
+	}
+
+	out.Overview.Summary.Games = int(summary.Samples)
+	out.Overview.Summary.WinRate = summary.WinRate
+	out.Overview.Summary.PickRate = summary.PickRate
+	out.Overview.Summary.MMRGain = summary.AvgMmr
+	out.Overview.Summary.SurvivalSec = summary.AvgSurvival
 
 	// ✅ stats는 DB 값으로 채움 (0~5)
 	out.Overview.Stats.ATK = int(atk)

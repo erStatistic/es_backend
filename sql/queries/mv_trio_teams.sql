@@ -43,7 +43,7 @@ WITH
             unnest(cw_ids) AS cw_id,
             COUNT(*) AS team_count,
             SUM((game_rank = 1)::int) AS wins,
-            AVG(gained_mmr)::float AS avg_mmr, -- ✅ gained_mmr 평균
+            AVG(gained_mmr)::float AS avg_mmr,
             AVG(total_time)::float AS avg_survival
         FROM
             scope_with_tier
@@ -51,35 +51,262 @@ WITH
             1
         HAVING
             COUNT(*) >= COALESCE(NULLIF($4::int, 0), 50)
+    ),
+    -- 기존 지표 계산(변경 없음)
+    base AS (
+        SELECT
+            h.*,
+            COALESCE(
+                h.wins::float8 / NULLIF(h.team_count::float8, 0.0),
+                0.0
+            ) AS win_rate,
+            COALESCE(
+                h.team_count::float8 / NULLIF(d.total_teams, 0.0),
+                0.0
+            ) AS pick_rate
+        FROM
+            cw_hits h
+            CROSS JOIN denom d
+    ),
+    -- 정규화(0~1)만 해서 score 계산에 사용
+    norm AS (
+        SELECT
+            b.*,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.win_rate
+            ) AS wr,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.avg_mmr
+            ) AS mmr_norm,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.pick_rate
+            ) AS pr_raw
+        FROM
+            base b
+    ),
+    -- 최종 score (가중치/신뢰도 적용)
+    scored AS (
+        SELECT
+            n.*,
+            sqrt(n.pr_raw) AS pr, -- 인기 과대 영향 완화
+            (1.0 - exp(- (n.team_count::float8) / 200.0)) AS conf, -- 표본 신뢰도
+            (
+                0.50::float8 * n.wr + 0.30::float8 * n.mmr_norm + 0.20::float8 * sqrt(n.pr_raw)
+            ) * (1.0 - exp(- (n.team_count::float8) / 200.0)) AS score -- float8
+        FROM
+            norm n
+    ),
+    -- 퍼센타일 컷(티어 경계치): S p95, A p80, B p55, C p30
+    thresh AS (
+        SELECT
+            percentile_cont(0.95) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p95, -- S 하한
+            percentile_cont(0.80) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p80, -- A 하한
+            percentile_cont(0.55) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p55, -- B 하한
+            percentile_cont(0.30) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p30 -- C 하한
+        FROM
+            scored
     )
 SELECT
-    h.cw_id,
-    -- ✅ ID 대신 이름을 내려줌
-    c.name_kr AS character_name_kr,
-    w.name_kr AS weapon_name_kr,
+    s.cw_id,
+    cw.character_id,
+    cw.weapon_id,
     cw.position_id,
     cw.cluster_id,
-    h.team_count AS samples,
-    h.wins,
-    COALESCE(
-        h.wins::float8 / NULLIF(h.team_count::float8, 0.0),
-        0.0
-    ) AS win_rate,
-    COALESCE(
-        h.team_count::float8 / NULLIF(d.total_teams, 0.0),
-        0.0
-    ) AS pick_rate,
-    h.avg_mmr, -- gained_mmr 평균
-    h.avg_survival
+    c.name_kr AS character_name_kr,
+    w.name_kr AS weapon_name_kr,
+    s.team_count AS samples,
+    s.wins,
+    s.win_rate, -- 그대로
+    s.pick_rate, -- 그대로
+    s.avg_mmr, -- 그대로
+    s.avg_survival, -- 그대로
+    s.score::float8 AS s_score, -- ✅ 추가(타입 확정)
+    CASE -- ✅ 티어 배정
+        WHEN s.score >= t.p95 THEN 'S' -- 상위 5%
+        WHEN s.score >= t.p80 THEN 'A' -- 80~95%
+        WHEN s.score >= t.p55 THEN 'B' -- 55~80%
+        WHEN s.score >= t.p30 THEN 'C' -- 30~55%
+        ELSE 'D' -- 30% 미만
+    END AS tier
 FROM
-    cw_hits h
-    JOIN character_weapons cw ON cw.id = h.cw_id
-    JOIN characters c ON c.id = cw.character_id -- ✅ 이름 조인
-    JOIN weapons w ON w.code = cw.weapon_id -- ✅ 이름 조인
-    CROSS JOIN denom d
+    scored s
+    CROSS JOIN thresh t
+    JOIN character_weapons cw ON cw.id = s.cw_id
+    JOIN characters c ON c.id = cw.character_id
+    JOIN weapons w ON w.code = cw.weapon_id
 ORDER BY
-    win_rate DESC;
+    s_score DESC;
 
+-- name: GetCwStatTop5 :many
+WITH
+    scope AS (
+        SELECT
+            *
+        FROM
+            mv_trio_teams
+        WHERE
+            (
+                $1::timestamptz IS NULL
+                OR started_at >= $1
+            )
+            AND (
+                $2::timestamptz IS NULL
+                OR started_at < $2
+            )
+    ),
+    scope_with_tier AS (
+        SELECT
+            s.*,
+            gt.gained_mmr
+        FROM
+            scope s
+            JOIN game_teams gt ON gt.id = s.game_team_id
+            LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
+        WHERE
+            (
+                NULLIF($3, '') IS NULL
+                OR t.name = $3
+            )
+    ),
+    denom AS (
+        SELECT
+            COUNT(*)::float8 AS total_teams
+        FROM
+            scope_with_tier
+    ),
+    cw_hits AS (
+        SELECT
+            unnest(cw_ids) AS cw_id,
+            COUNT(*) AS team_count,
+            SUM((game_rank = 1)::int) AS wins,
+            AVG(gained_mmr)::float AS avg_mmr,
+            AVG(total_time)::float AS avg_survival
+        FROM
+            scope_with_tier
+        GROUP BY
+            1
+        HAVING
+            COUNT(*) >= COALESCE(NULLIF($4::int, 0), 50)
+    ),
+    -- 기존 지표 계산(변경 없음)
+    base AS (
+        SELECT
+            h.*,
+            COALESCE(
+                h.wins::float8 / NULLIF(h.team_count::float8, 0.0),
+                0.0
+            ) AS win_rate,
+            COALESCE(
+                h.team_count::float8 / NULLIF(d.total_teams, 0.0),
+                0.0
+            ) AS pick_rate
+        FROM
+            cw_hits h
+            CROSS JOIN denom d
+    ),
+    -- 정규화(0~1)만 해서 score 계산에 사용
+    norm AS (
+        SELECT
+            b.*,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.win_rate
+            ) AS wr,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.avg_mmr
+            ) AS mmr_norm,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.pick_rate
+            ) AS pr_raw
+        FROM
+            base b
+    ),
+    -- 최종 score (가중치/신뢰도 적용)
+    scored AS (
+        SELECT
+            n.*,
+            sqrt(n.pr_raw) AS pr, -- 인기 과대 영향 완화
+            (1.0 - exp(- (n.team_count::float8) / 200.0)) AS conf, -- 표본 신뢰도
+            (
+                0.50::float8 * n.wr + 0.30::float8 * n.mmr_norm + 0.20::float8 * sqrt(n.pr_raw)
+            ) * (1.0 - exp(- (n.team_count::float8) / 200.0)) AS score -- float8
+        FROM
+            norm n
+    ),
+    -- 퍼센타일 컷(티어 경계치): S p95, A p80, B p55, C p30
+    thresh AS (
+        SELECT
+            percentile_cont(0.95) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p95, -- S 하한
+            percentile_cont(0.80) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p80, -- A 하한
+            percentile_cont(0.55) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p55, -- B 하한
+            percentile_cont(0.30) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p30 -- C 하한
+        FROM
+            scored
+    )
+SELECT
+    s.cw_id,
+    cw.character_id,
+    cw.weapon_id,
+    cw.position_id,
+    cw.cluster_id,
+    c.name_kr AS character_name_kr,
+    w.name_kr AS weapon_name_kr,
+    s.team_count AS samples,
+    s.wins,
+    s.win_rate, -- 그대로
+    s.pick_rate, -- 그대로
+    s.avg_mmr, -- 그대로
+    s.avg_survival, -- 그대로
+    s.score::float8 AS s_score, -- ✅ 추가(타입 확정)
+    CASE -- ✅ 티어 배정
+        WHEN s.score >= t.p95 THEN 'S' -- 상위 5%
+        WHEN s.score >= t.p80 THEN 'A' -- 80~95%
+        WHEN s.score >= t.p55 THEN 'B' -- 55~80%
+        WHEN s.score >= t.p30 THEN 'C' -- 30~55%
+        ELSE 'D' -- 30% 미만
+    END AS tier
+FROM
+    scored s
+    CROSS JOIN thresh t
+    JOIN character_weapons cw ON cw.id = s.cw_id
+    JOIN characters c ON c.id = cw.character_id
+    JOIN weapons w ON w.code = cw.weapon_id
+ORDER BY
+    s_score DESC
+LIMIT
+    5;
+
+-- 기존 정렬 유지(Top5 용에선 score DESC 별도 쿼리/파라미터로)
+-- 기존 정렬 유지(Top5 용으로는 별도 쿼리에서 score DESC 사용)
 -- name: GetTopClusterCombos :many
 WITH
     scope AS (
@@ -167,93 +394,6 @@ LIMIT
 OFFSET
     $5;
 
--- name: GetCompMetricsBySelectedCWs :one
-WITH
-    want AS (
-        SELECT
-            ARRAY(
-                SELECT
-                    cw.cluster_id
-                FROM
-                    character_weapons cw
-                WHERE
-                    cw.id = ANY ($3::INT[])
-                ORDER BY
-                    cw.cluster_id
-            ) AS cluster_ids
-    ),
-    scope AS (
-        SELECT
-            *
-        FROM
-            mv_trio_teams
-        WHERE
-            (
-                $1::timestamptz IS NULL
-                OR started_at >= $1
-            )
-            AND (
-                $2::timestamptz IS NULL
-                OR started_at < $2
-            )
-    ),
-    scope_with_tier AS (
-        SELECT
-            s.*,
-            gt.gained_mmr
-        FROM
-            scope s
-            JOIN game_teams gt ON gt.id = s.game_team_id
-            LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
-        WHERE
-            (
-                NULLIF($4, '') IS NULL
-                OR t.name = $4
-            )
-    ),
-    denom AS (
-        SELECT
-            COUNT(*)::float8 AS total_teams
-        FROM
-            scope_with_tier
-    ),
-    matched AS (
-        SELECT
-            s.*
-        FROM
-            scope_with_tier s,
-            want w
-        WHERE
-            s.cluster_ids = w.cluster_ids
-    ),
-    agg AS (
-        SELECT
-            COUNT(*) AS team_count,
-            SUM((game_rank = 1)::int) AS wins,
-            AVG(gained_mmr)::float AS avg_mmr, -- ✅ gained_mmr 평균
-            AVG(total_time)::float AS avg_survival
-        FROM
-            matched
-    )
-SELECT
-    a.team_count AS samples,
-    a.wins,
-    COALESCE(
-        a.wins::float8 / NULLIF(a.team_count::float8, 0.0),
-        0.0
-    ) AS win_rate,
-    COALESCE(
-        a.team_count::float8 / NULLIF(d.total_teams, 0.0),
-        0.0
-    ) AS pick_rate,
-    a.avg_mmr, -- ✅ gained_mmr 평균
-    a.avg_survival
-FROM
-    agg a
-    CROSS JOIN denom d
-WHERE
-    a.team_count >= COALESCE(NULLIF($5::int, 0), 50);
-
 -- name: GetCwDailyTrend :many
 WITH
     scope AS (
@@ -318,3 +458,278 @@ FROM
     JOIN totals t ON t.day = d.day
 ORDER BY
     d.day;
+
+-- name: GetOneCwStats :one
+WITH
+    scope AS (
+        SELECT
+            *
+        FROM
+            mv_trio_teams
+        WHERE
+            (
+                $1::timestamptz IS NULL
+                OR started_at >= $1
+            )
+            AND (
+                $2::timestamptz IS NULL
+                OR started_at < $2
+            )
+    ),
+    scope_with_tier AS (
+        SELECT
+            s.*,
+            gt.gained_mmr
+        FROM
+            scope s
+            JOIN game_teams gt ON gt.id = s.game_team_id
+            LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
+        WHERE
+            (
+                NULLIF($3, '') IS NULL
+                OR t.name = $3
+            )
+    ),
+    denom AS (
+        SELECT
+            COUNT(*)::float8 AS total_teams
+        FROM
+            scope_with_tier
+    ),
+    hits AS (
+        SELECT
+            COUNT(*) AS team_count,
+            SUM((game_rank = 1)::int) AS wins,
+            AVG(gained_mmr)::float AS avg_mmr,
+            AVG(total_time)::float AS avg_survival
+        FROM
+            scope_with_tier
+        WHERE
+            $4::int = ANY (cw_ids)
+    )
+SELECT
+    cw.id AS cw_id,
+    cw.character_id,
+    cw.weapon_id,
+    c.name_kr AS character_name_kr,
+    w.name_kr AS weapon_name_kr,
+    h.team_count AS samples,
+    h.wins,
+    COALESCE(
+        h.wins::float8 / NULLIF(h.team_count::float8, 0),
+        0.0
+    ) AS win_rate,
+    COALESCE(
+        h.team_count::float8 / NULLIF(d.total_teams, 0.0),
+        0.0
+    ) AS pick_rate,
+    h.avg_mmr,
+    h.avg_survival
+FROM
+    hits h
+    CROSS JOIN denom d
+    JOIN character_weapons cw ON cw.id = $4
+    JOIN characters c ON c.id = cw.character_id
+    JOIN weapons w ON w.code = cw.weapon_id
+WHERE
+    h.team_count >= COALESCE(NULLIF($5::int, 0), 50);
+
+-- name: GetCompMetricsByExactCWs :one
+WITH
+    want AS (
+        SELECT
+            ARRAY(
+                SELECT
+                    x
+                FROM
+                    unnest($3::INT[]) AS x
+                ORDER BY
+                    x
+            ) AS cw_ids
+    ),
+    scope AS (
+        SELECT
+            *
+        FROM
+            mv_trio_teams
+        WHERE
+            (
+                $1::timestamptz IS NULL
+                OR started_at >= $1
+            )
+            AND (
+                $2::timestamptz IS NULL
+                OR started_at < $2
+            )
+    ),
+    scope_with_tier AS (
+        SELECT
+            s.*,
+            gt.gained_mmr
+        FROM
+            scope s
+            JOIN game_teams gt ON gt.id = s.game_team_id
+            LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
+        WHERE
+            (
+                NULLIF($4, '') IS NULL
+                OR t.name = $4
+            )
+    ),
+    denom AS (
+        SELECT
+            COUNT(*)::float8 AS total_teams
+        FROM
+            scope_with_tier
+    ),
+    matched AS (
+        SELECT
+            s.*
+        FROM
+            scope_with_tier s,
+            want w
+        WHERE
+            s.cw_ids = w.cw_ids
+    ),
+    agg AS (
+        SELECT
+            COUNT(*) AS team_count,
+            SUM((game_rank = 1)::int) AS wins,
+            AVG(gained_mmr)::float AS avg_mmr,
+            AVG(total_time)::float AS avg_survival
+        FROM
+            matched
+    )
+SELECT
+    w.cw_ids,
+    a.team_count AS samples,
+    a.wins,
+    COALESCE(
+        a.wins::float8 / NULLIF(a.team_count::float8, 0.0),
+        0.0
+    ) AS win_rate,
+    COALESCE(
+        a.team_count::float8 / NULLIF(d.total_teams, 0.0),
+        0.0
+    ) AS pick_rate,
+    a.avg_mmr,
+    a.avg_survival
+FROM
+    agg a
+    CROSS JOIN denom d
+    CROSS JOIN want w
+WHERE
+    a.team_count >= COALESCE(NULLIF($5::int, 0), 50);
+
+-- name: GetCompMetricsBySelectedCWs :one
+WITH
+    want AS (
+        SELECT
+            ARRAY(
+                SELECT
+                    cw.cluster_id
+                FROM
+                    character_weapons cw
+                WHERE
+                    cw.id = ANY ($3::INT[])
+                ORDER BY
+                    cw.cluster_id
+            ) AS cluster_ids
+    ),
+    scope AS (
+        SELECT
+            *
+        FROM
+            mv_trio_teams
+        WHERE
+            (
+                $1::timestamptz IS NULL
+                OR started_at >= $1
+            )
+            AND (
+                $2::timestamptz IS NULL
+                OR started_at < $2
+            )
+    ),
+    scope_with_tier AS (
+        SELECT
+            s.*,
+            gt.gained_mmr
+        FROM
+            scope s
+            JOIN game_teams gt ON gt.id = s.game_team_id
+            LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
+        WHERE
+            (
+                NULLIF($4, '') IS NULL
+                OR t.name = $4
+            )
+    ),
+    denom AS (
+        SELECT
+            COUNT(*)::float8 AS total_teams
+        FROM
+            scope_with_tier
+    ),
+    matched AS (
+        SELECT
+            s.*
+        FROM
+            scope_with_tier s,
+            want w
+        WHERE
+            s.cluster_ids = w.cluster_ids
+    ),
+    agg AS (
+        SELECT
+            COUNT(*) AS team_count,
+            SUM((game_rank = 1)::int) AS wins,
+            AVG(gained_mmr)::float AS avg_mmr,
+            AVG(total_time)::float AS avg_survival
+        FROM
+            matched
+    ),
+    label AS (
+        SELECT
+            ARRAY(
+                SELECT
+                    cid
+                FROM
+                    want w,
+                    unnest(w.cluster_ids) cid
+            ) AS cluster_ids,
+            ARRAY_TO_STRING(
+                ARRAY(
+                    SELECT
+                        cu.name
+                    FROM
+                        want w,
+                        unnest(w.cluster_ids) cid
+                        JOIN clusters cu ON cu.id = cid
+                    ORDER BY
+                        cu.name
+                ),
+                ' · '
+            ) AS cluster_label
+    )
+SELECT
+    l.cluster_ids,
+    l.cluster_label,
+    a.team_count AS samples,
+    a.wins,
+    COALESCE(
+        a.wins::float8 / NULLIF(a.team_count::float8, 0.0),
+        0.0
+    ) AS win_rate,
+    COALESCE(
+        a.team_count::float8 / NULLIF(d.total_teams, 0.0),
+        0.0
+    ) AS pick_rate,
+    a.avg_mmr,
+    a.avg_survival
+FROM
+    agg a
+    CROSS JOIN denom d
+    CROSS JOIN label l
+WHERE
+    a.team_count >= COALESCE(NULLIF($5::int, 0), 50);
