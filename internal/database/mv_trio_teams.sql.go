@@ -293,6 +293,235 @@ func (q *Queries) GetCompMetricsBySelectedCWs(ctx context.Context, arg GetCompMe
 	return i, err
 }
 
+const getCwBestComps = `-- name: GetCwBestComps :many
+WITH
+    scope AS (
+        SELECT
+            m.game_team_id, m.game_code, m.started_at, m.game_rank, m.total_time, m.team_avg_mmr, m.cw_ids, m.cluster_ids,
+            gt.gained_mmr
+        FROM
+            mv_trio_teams m
+            JOIN game_teams gt ON gt.id = m.game_team_id
+        WHERE
+            (
+                $1::timestamptz IS NULL
+                OR m.started_at >= $1
+            )
+            AND (
+                $2::timestamptz IS NULL
+                OR m.started_at < $2
+            )
+    ),
+    scope_with_tier AS (
+        SELECT
+            s.game_team_id, s.game_code, s.started_at, s.game_rank, s.total_time, s.team_avg_mmr, s.cw_ids, s.cluster_ids, s.gained_mmr
+        FROM
+            scope s
+            LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
+        WHERE
+            (
+                NULLIF($3, '') IS NULL
+                OR t.name = $3
+            ) -- tier 필터(옵션)
+    ),
+    denom AS (
+        SELECT
+            COUNT(*)::float8 AS total_teams
+        FROM
+            scope_with_tier
+    ),
+    -- ✅ 선택한 cwId를 포함하는 '같은 조합(cw_ids 세트)' 단위 집계
+    comp_hits AS (
+        SELECT
+            s.cw_ids AS comp_key, -- 이미 정렬된 배열(int[])
+            COUNT(*) AS team_count,
+            SUM((s.game_rank = 1)::int) AS wins,
+            AVG(s.gained_mmr)::float AS avg_mmr,
+            AVG(s.total_time)::float AS avg_survival
+        FROM
+            scope_with_tier s
+        WHERE
+            $4::int = ANY (s.cw_ids) -- 필수: 해당 cw 포함
+        GROUP BY
+            1
+        HAVING
+            COUNT(*) >= COALESCE(NULLIF($5::int, 0), 20) -- 최소 표본(기본 20)
+    ),
+    base AS (
+        SELECT
+            h.comp_key, h.team_count, h.wins, h.avg_mmr, h.avg_survival,
+            COALESCE(
+                h.wins::float8 / NULLIF(h.team_count::float8, 0.0),
+                0.0
+            ) AS win_rate,
+            COALESCE(
+                h.team_count::float8 / NULLIF(d.total_teams, 0.0),
+                0.0
+            ) AS pick_rate
+        FROM
+            comp_hits h
+            CROSS JOIN denom d
+    ),
+    norm AS (
+        SELECT
+            b.comp_key, b.team_count, b.wins, b.avg_mmr, b.avg_survival, b.win_rate, b.pick_rate,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.win_rate
+            ) AS wr,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.avg_mmr
+            ) AS mmr_norm,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.pick_rate
+            ) AS pr_raw
+        FROM
+            base b
+    ),
+    scored AS (
+        SELECT
+            n.comp_key, n.team_count, n.wins, n.avg_mmr, n.avg_survival, n.win_rate, n.pick_rate, n.wr, n.mmr_norm, n.pr_raw,
+            sqrt(n.pr_raw) AS pr,
+            (1.0 - exp(- (n.team_count::float8) / 200.0)) AS conf,
+            (
+                0.50 * n.wr + 0.30 * n.mmr_norm + 0.20 * sqrt(n.pr_raw)
+            ) * (1.0 - exp(- (n.team_count::float8) / 200.0)) AS score
+        FROM
+            norm n
+    ),
+    thresh AS (
+        SELECT
+            percentile_cont(0.95) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p95,
+            percentile_cont(0.80) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p80,
+            percentile_cont(0.55) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p55,
+            percentile_cont(0.30) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p30
+        FROM
+            scored
+    ),
+    -- 조합 구성원 메타 (JSON 배열)
+    comp_meta AS (
+        SELECT
+            s.comp_key,
+            json_agg(
+                json_build_object(
+                    'cw_id',
+                    cw.id,
+                    'character_id',
+                    cw.character_id,
+                    'weapon_id',
+                    cw.weapon_id,
+                    'character_name_kr',
+                    c.name_kr,
+                    'weapon_name_kr',
+                    w.name_kr,
+                    'image_url_mini',
+                    c.image_url_mini,
+                    'weapon_image_url',
+                    w.image_url
+                )
+                ORDER BY
+                    cw.id
+            ) AS members
+        FROM
+            scored s
+            JOIN character_weapons cw ON cw.id = ANY (s.comp_key)
+            JOIN characters c ON c.id = cw.character_id
+            JOIN weapons w ON w.code = cw.weapon_id
+        GROUP BY
+            s.comp_key
+    )
+SELECT
+    s.comp_key, -- int[] (조합)
+    s.team_count AS samples,
+    s.wins,
+    s.win_rate,
+    s.pick_rate,
+    s.avg_mmr,
+    s.avg_survival,
+    s.score::float8 AS s_score,
+    cm.members::jsonb
+FROM
+    scored s
+    CROSS JOIN thresh t
+    JOIN comp_meta cm ON cm.comp_key = s.comp_key
+ORDER BY
+    s_score DESC
+LIMIT
+    COALESCE(NULLIF($6::int, 0), 2)
+`
+
+type GetCwBestCompsParams struct {
+	Column1 pgtype.Timestamptz `json:"column_1"`
+	Column2 pgtype.Timestamptz `json:"column_2"`
+	Column3 interface{}        `json:"column_3"`
+	Column4 int32              `json:"column_4"`
+	Column5 int32              `json:"column_5"`
+	Column6 int32              `json:"column_6"`
+}
+
+type GetCwBestCompsRow struct {
+	CompKey     interface{} `json:"comp_key"`
+	Samples     int64       `json:"samples"`
+	Wins        int64       `json:"wins"`
+	WinRate     interface{} `json:"win_rate"`
+	PickRate    interface{} `json:"pick_rate"`
+	AvgMmr      float64     `json:"avg_mmr"`
+	AvgSurvival float64     `json:"avg_survival"`
+	SScore      float64     `json:"s_score"`
+	CmMembers   []byte      `json:"cm_members"`
+}
+
+func (q *Queries) GetCwBestComps(ctx context.Context, arg GetCwBestCompsParams) ([]GetCwBestCompsRow, error) {
+	rows, err := q.db.Query(ctx, getCwBestComps,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Column5,
+		arg.Column6,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCwBestCompsRow
+	for rows.Next() {
+		var i GetCwBestCompsRow
+		if err := rows.Scan(
+			&i.CompKey,
+			&i.Samples,
+			&i.Wins,
+			&i.WinRate,
+			&i.PickRate,
+			&i.AvgMmr,
+			&i.AvgSurvival,
+			&i.SScore,
+			&i.CmMembers,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCwDailyTrend = `-- name: GetCwDailyTrend :many
 WITH
     scope AS (
@@ -320,7 +549,7 @@ WITH
     ),
     daily AS (
         SELECT
-            DATE_TRUNC('day', started_at) AS DAY,
+            (started_at)::date AS DAY,
             COUNT(*) AS team_count,
             SUM((game_rank = 1)::int) AS wins
         FROM
@@ -334,7 +563,7 @@ WITH
     ),
     totals AS (
         SELECT
-            DATE_TRUNC('day', started_at) AS DAY,
+            (started_at)::date AS DAY,
             COUNT(*)::float8 AS total_teams
         FROM
             scope_with_tier
@@ -368,10 +597,10 @@ type GetCwDailyTrendParams struct {
 }
 
 type GetCwDailyTrendRow struct {
-	Day      pgtype.Interval `json:"day"`
-	Samples  int64           `json:"samples"`
-	WinRate  interface{}     `json:"win_rate"`
-	PickRate interface{}     `json:"pick_rate"`
+	Day      pgtype.Date `json:"day"`
+	Samples  int64       `json:"samples"`
+	WinRate  interface{} `json:"win_rate"`
+	PickRate interface{} `json:"pick_rate"`
 }
 
 func (q *Queries) GetCwDailyTrend(ctx context.Context, arg GetCwDailyTrendParams) ([]GetCwDailyTrendRow, error) {

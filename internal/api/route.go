@@ -190,6 +190,7 @@ func (cfg *Config) Routes() http.Handler {
 			r.Route("/cw/{cwId}", func(r chi.Router) {
 				r.Get("/stats", cfg.GetCwStatsByCw)
 				r.Get("/trend", cfg.GetCwTrend)
+				r.Get("/best-comps", cfg.GetBestCompsByCw)
 			})
 		})
 

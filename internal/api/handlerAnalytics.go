@@ -319,6 +319,71 @@ func (cfg *Config) GetCwTrend(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, 200, "ok", rows)
 }
 
+type BestCompDTO struct {
+	CompKey     any             `json:"comp_key"`
+	Samples     int32           `json:"samples"`
+	Wins        int32           `json:"wins"`
+	WinRate     any             `json:"win_rate"`
+	PickRate    any             `json:"pick_rate"`
+	AvgMmr      float64         `json:"avg_mmr"`
+	AvgSurvival float64         `json:"avg_survival"`
+	SScore      float64         `json:"s_score"`
+	Members     json.RawMessage `json:"members"` // ← 여기!
+}
+
+func (cfg *Config) GetBestCompsByCw(w http.ResponseWriter, r *http.Request) {
+	cwIDStr := chi.URLParam(r, "cwId")
+	cwID, err := strconv.Atoi(cwIDStr)
+	if err != nil {
+		respondWithError(w, 400, "bad cwId", err)
+		return
+	}
+
+	q := r.URL.Query()
+	tier := normalizeTier(q.Get("tier"))
+	start, err := parseRFC3339Ptr(q.Get("start"))
+	if err != nil {
+		respondWithError(w, 400, "bad start", err)
+		return
+	}
+	end, err := parseRFC3339Ptr(q.Get("end"))
+	if err != nil {
+		respondWithError(w, 400, "bad end", err)
+		return
+	}
+	minSamples := int32(parseIntDefault(q.Get("minSamples"), 20))
+	limit := int32(parseIntDefault(q.Get("limit"), 2))
+
+	rows, err := cfg.DB.GetCwBestComps(r.Context(), database.GetCwBestCompsParams{
+		// $1..$6
+		Column1: start,
+		Column2: end,
+		Column3: tier,
+		Column4: int32(cwID),
+		Column5: minSamples,
+		Column6: limit,
+	})
+	if err != nil {
+		respondWithError(w, 500, "query failed", err)
+		return
+	}
+	out := make([]BestCompDTO, len(rows))
+	for i, r := range rows {
+		out[i] = BestCompDTO{
+			CompKey:     r.CompKey,
+			Samples:     int32(r.Samples),
+			Wins:        int32(r.Wins),
+			WinRate:     r.WinRate,
+			PickRate:    r.PickRate,
+			AvgMmr:      r.AvgMmr,
+			AvgSurvival: r.AvgSurvival,
+			SScore:      r.SScore,
+			Members:     json.RawMessage(r.CmMembers), // ← base64 대신 raw JSON으로 직렬화
+		}
+	}
+	respondWithJson(w, 200, "ok", out)
+}
+
 // 관리용: MV refresh
 func (cfg *Config) RefreshMvTrioTeams(w http.ResponseWriter, r *http.Request) {
 	if err := cfg.DB.RefreshMvTrioTeams(r.Context()); err != nil {
