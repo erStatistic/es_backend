@@ -903,3 +903,163 @@ ORDER BY
     s_score DESC
 LIMIT
     COALESCE(NULLIF($6::int, 0), 2);
+
+-- name: GetTopTrioComps :many
+WITH
+    -- 가중치(원하면 숫자만 바꿔서 튜닝)
+    weights AS (
+        SELECT
+            0.30::float8 AS w_wr, -- 승률 가중치
+            0.20::float8 AS w_mmr, -- 평균 MMR 가중치
+            0.50::float8 AS w_pr -- 픽률 가중치(↑)
+    ),
+    scope AS (
+        SELECT
+            *
+        FROM
+            mv_trio_teams
+        WHERE
+            (
+                $1::timestamptz IS NULL
+                OR started_at >= $1
+            )
+            AND (
+                $2::timestamptz IS NULL
+                OR started_at < $2
+            )
+    ),
+    scope_with_tier AS (
+        SELECT
+            s.*
+        FROM
+            scope s
+            LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
+        WHERE
+            (
+                NULLIF($3, '') IS NULL
+                OR t.name = $3
+            )
+    ),
+    denom AS ( -- 母수(전체 팀 수)
+        SELECT
+            COUNT(*)::float8 AS total_teams
+        FROM
+            scope_with_tier
+    ),
+    team_hits AS ( -- 조합별 집계
+        SELECT
+            cw_ids AS comp_key,
+            COUNT(*) AS team_count,
+            SUM((game_rank = 1)::int) AS wins,
+            AVG(team_avg_mmr)::float8 AS avg_mmr,
+            AVG(total_time)::float8 AS avg_survival
+        FROM
+            scope_with_tier
+        GROUP BY
+            1
+        HAVING
+            COUNT(*) >= COALESCE(NULLIF($4::int, 0), 30) -- minSamples
+    ),
+    base AS (
+        SELECT
+            h.*,
+            COALESCE(
+                h.wins::float8 / NULLIF(h.team_count::float8, 0),
+                0.0
+            ) AS win_rate,
+            COALESCE(
+                h.team_count::float8 / NULLIF(d.total_teams, 0),
+                0.0
+            ) AS pick_rate
+        FROM
+            team_hits h
+            CROSS JOIN denom d
+    ),
+    norm AS ( -- 0~1 정규화(상대 순위 기반)
+        SELECT
+            b.*,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.win_rate
+            ) AS wr,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.avg_mmr
+            ) AS mmr_norm,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.pick_rate
+            ) AS pr_raw
+        FROM
+            base b
+    ),
+    scored AS (
+        SELECT
+            n.*,
+            sqrt(n.pr_raw) AS pr, -- 인기 과대 영향 완화
+            (1.0 - exp(- (n.team_count::float8) / 200.0)) AS conf, -- 표본 신뢰도
+            (
+                (
+                    SELECT
+                        w_wr
+                    FROM
+                        weights
+                ) * n.wr + (
+                    SELECT
+                        w_mmr
+                    FROM
+                        weights
+                ) * n.mmr_norm + (
+                    SELECT
+                        w_pr
+                    FROM
+                        weights
+                ) * sqrt(n.pr_raw)
+            ) * (1.0 - exp(- (n.team_count::float8) / 200.0)) AS score
+        FROM
+            norm n
+    )
+SELECT
+    s.comp_key,
+    s.team_count AS samples,
+    s.wins,
+    s.win_rate,
+    s.pick_rate,
+    s.avg_mmr,
+    s.avg_survival,
+    s.score::float8 AS s_score,
+    -- 조합 멤버 상세(JSON 배열)
+    (
+        SELECT
+            json_agg(
+                json_build_object(
+                    'cw_id',
+                    cw.id,
+                    'weapon_id',
+                    cw.weapon_id,
+                    'character_id',
+                    cw.character_id,
+                    'weapon_name_kr',
+                    w.name_kr,
+                    'character_name_kr',
+                    c.name_kr,
+                    'image_url_mini',
+                    c.image_url_mini,
+                    'weapon_image_url',
+                    w.image_url
+                )
+                ORDER BY
+                    cw.id
+            )
+        FROM
+            unnest(s.comp_key) u (cw_id)
+            JOIN character_weapons cw ON cw.id = u.cw_id
+            JOIN characters c ON c.id = cw.character_id
+            JOIN weapons w ON w.code = cw.weapon_id
+    ) AS members
+FROM
+    scored s
+ORDER BY
+    s.score DESC
+LIMIT
+    COALESCE(NULLIF($5::int, 0), 3);

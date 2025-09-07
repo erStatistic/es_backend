@@ -185,6 +185,7 @@ func (cfg *Config) Routes() http.Handler {
 			r.Get("/combos/clusters", cfg.GetClusterCombos)
 			r.Get("/cw/stats", cfg.GetCwStats)
 			r.Get("/cw/top5", cfg.GetCwStatTop5)
+			r.Get("/popular-comps", cfg.GetTopPopularComps)
 			r.Post("/comp/metrics", cfg.GetCompMetrics)
 			r.Post("/mv/refresh", cfg.RefreshMvTrioTeams)
 			r.Route("/cw/{cwId}", func(r chi.Router) {

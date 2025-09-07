@@ -384,6 +384,65 @@ func (cfg *Config) GetBestCompsByCw(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, 200, "ok", out)
 }
 
+type TopTrioCompsDTO struct {
+	CompKey     any             `json:"comp_key"`
+	Samples     int64           `json:"samples"`
+	Wins        int64           `json:"wins"`
+	WinRate     any             `json:"win_rate"`
+	PickRate    any             `json:"pick_rate"`
+	AvgMmr      float64         `json:"avg_mmr"`
+	AvgSurvival float64         `json:"avg_survival"`
+	SScore      float64         `json:"s_score"`
+	Members     json.RawMessage `json:"members"`
+}
+
+func (cfg *Config) GetTopPopularComps(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	start, err := parseRFC3339Ptr(q.Get("start"))
+	if err != nil {
+		respondWithError(w, 400, "bad start", err)
+		return
+	}
+	end, err := parseRFC3339Ptr(q.Get("end"))
+	if err != nil {
+		respondWithError(w, 400, "bad end", err)
+		return
+	}
+	tier := normalizeTier(q.Get("tier"))
+
+	minSamples := parseIntDefault(q.Get("minSamples"), 30)
+	limit := parseIntDefault(q.Get("limit"), 3)
+
+	rows, err := cfg.DB.GetTopTrioComps(r.Context(), database.GetTopTrioCompsParams{
+		// $1..$5
+		Column1: start,
+		Column2: end,
+		Column3: tier,
+		Column4: int32(minSamples),
+		Column5: int32(limit),
+	})
+	if err != nil {
+		respondWithError(w, 500, "query failed", err)
+		return
+	}
+	out := make([]TopTrioCompsDTO, len(rows))
+	for i, r := range rows {
+		out[i] = TopTrioCompsDTO{
+			CompKey:     r.CompKey,
+			Samples:     int64(r.Samples),
+			Wins:        int64(r.Wins),
+			WinRate:     r.WinRate,
+			PickRate:    r.PickRate,
+			AvgMmr:      r.AvgMmr,
+			AvgSurvival: r.AvgSurvival,
+			SScore:      r.SScore,
+			Members:     json.RawMessage(r.Members), // ← base64 대신 raw JSON으로 직렬화
+		}
+	}
+	respondWithJson(w, 200, "ok", out)
+}
+
 // 관리용: MV refresh
 func (cfg *Config) RefreshMvTrioTeams(w http.ResponseWriter, r *http.Request) {
 	if err := cfg.DB.RefreshMvTrioTeams(r.Context()); err != nil {
