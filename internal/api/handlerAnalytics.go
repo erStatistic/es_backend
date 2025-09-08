@@ -412,7 +412,7 @@ func (cfg *Config) GetTopPopularComps(w http.ResponseWriter, r *http.Request) {
 	tier := normalizeTier(q.Get("tier"))
 
 	minSamples := parseIntDefault(q.Get("minSamples"), 30)
-	limit := parseIntDefault(q.Get("limit"), 3)
+	limit := parseIntDefault(q.Get("limit"), 5)
 
 	rows, err := cfg.DB.GetTopTrioComps(r.Context(), database.GetTopTrioCompsParams{
 		// $1..$5
