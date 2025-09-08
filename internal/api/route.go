@@ -104,6 +104,7 @@ func (cfg *Config) Routes() http.Handler {
 			r.Get("/", cfg.ListCharacterWeapons)
 			r.Post("/", cfg.CreateCharacterWeapon)
 			r.Get("/directory", cfg.ListCwDirectoryByCluster)
+			r.Get("/by-clusters", cfg.ListCwEntriesByClusters)
 			r.Get("/by-cluster/{clusterId}", cfg.ListCwEntriesByCluster)
 			r.Route("/{cwId}", func(r chi.Router) {
 				r.Use(cfg.CharacterWeaponCtx)

@@ -163,3 +163,45 @@ FROM
 WHERE
     character_id = $1
     AND weapon_id = $2;
+
+-- name: CharactersByClusterID :many
+SELECT
+    cw.cluster_id,
+    c.id AS character_id,
+    c.name_kr AS character_name_kr,
+    c.image_url_mini,
+    w.image_url AS weapon_image_url
+FROM
+    character_weapons cw
+    JOIN characters c ON c.id = cw.character_id
+    LEFT JOIN weapons w ON w.code = cw.weapon_id
+WHERE
+    cw.cluster_id = $1
+ORDER BY
+    cw.cluster_id,
+    c.name_kr;
+
+-- name: ListCwByClusters :many
+SELECT
+    cw.cluster_id AS cluster_id,
+    cl.name AS cluster_label,
+    cw.id AS cw_id,
+    c.id AS ch_id,
+    c.name_kr AS ch_name,
+    COALESCE(NULLIF(c.image_url_mini, ''), c.image_url_full) AS ch_img,
+    w.code AS w_code,
+    w.name_kr AS w_name,
+    w.image_url AS w_img,
+    p.id AS pos_id,
+    p.name AS pos_name
+FROM
+    character_weapons cw
+    JOIN characters c ON c.id = cw.character_id
+    JOIN weapons w ON w.code = cw.weapon_id
+    JOIN positions p ON p.id = cw.position_id
+    JOIN clusters cl ON cl.id = cw.cluster_id
+WHERE
+    cw.cluster_id = ANY (sqlc.arg (ids)::int4[])
+ORDER BY
+    cw.cluster_id,
+    c.name_kr;

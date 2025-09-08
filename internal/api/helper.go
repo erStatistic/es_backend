@@ -2,6 +2,7 @@ package rumiapi
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -37,6 +38,26 @@ func parseIntDefault(s string, def int) int {
 		return v
 	}
 	return def
+}
+
+func parseInt32List(q string) ([]int32, error) {
+	if q == "" {
+		return nil, nil
+	}
+	ps := strings.Split(q, ",")
+	out := make([]int32, 0, len(ps))
+	for _, p := range ps {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		v, err := strconv.ParseInt(p, 10, 32)
+		if err != nil || v <= 0 {
+			return nil, err
+		}
+		out = append(out, int32(v))
+	}
+	return out, nil
 }
 
 // pgtype.Timestamptz -> *time.Time (nullable 컬럼용)

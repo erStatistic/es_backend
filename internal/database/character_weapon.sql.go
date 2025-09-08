@@ -39,6 +39,58 @@ func (q *Queries) CWByCharacterIDAndWeaponID(ctx context.Context, arg CWByCharac
 	return i, err
 }
 
+const charactersByClusterID = `-- name: CharactersByClusterID :many
+SELECT
+    cw.cluster_id,
+    c.id AS character_id,
+    c.name_kr AS character_name_kr,
+    c.image_url_mini,
+    w.image_url AS weapon_image_url
+FROM
+    character_weapons cw
+    JOIN characters c ON c.id = cw.character_id
+    LEFT JOIN weapons w ON w.code = cw.weapon_id
+WHERE
+    cw.cluster_id = $1
+ORDER BY
+    cw.cluster_id,
+    c.name_kr
+`
+
+type CharactersByClusterIDRow struct {
+	ClusterID       int32   `json:"cluster_id"`
+	CharacterID     int32   `json:"character_id"`
+	CharacterNameKr string  `json:"character_name_kr"`
+	ImageUrlMini    string  `json:"image_url_mini"`
+	WeaponImageUrl  *string `json:"weapon_image_url"`
+}
+
+func (q *Queries) CharactersByClusterID(ctx context.Context, clusterID int32) ([]CharactersByClusterIDRow, error) {
+	rows, err := q.db.Query(ctx, charactersByClusterID, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CharactersByClusterIDRow
+	for rows.Next() {
+		var i CharactersByClusterIDRow
+		if err := rows.Scan(
+			&i.ClusterID,
+			&i.CharacterID,
+			&i.CharacterNameKr,
+			&i.ImageUrlMini,
+			&i.WeaponImageUrl,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createCharacterWeapon = `-- name: CreateCharacterWeapon :one
 INSERT INTO
     character_weapons (character_id, weapon_id, position_id, cluster_id)
@@ -260,6 +312,78 @@ func (q *Queries) ListCwByClusterID(ctx context.Context, clusterID int32) ([]Lis
 			&i.WImg,
 			&i.PID,
 			&i.PName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCwByClusters = `-- name: ListCwByClusters :many
+SELECT
+    cw.cluster_id AS cluster_id,
+    cl.name AS cluster_label,
+    cw.id AS cw_id,
+    c.id AS ch_id,
+    c.name_kr AS ch_name,
+    COALESCE(NULLIF(c.image_url_mini, ''), c.image_url_full) AS ch_img,
+    w.code AS w_code,
+    w.name_kr AS w_name,
+    w.image_url AS w_img,
+    p.id AS pos_id,
+    p.name AS pos_name
+FROM
+    character_weapons cw
+    JOIN characters c ON c.id = cw.character_id
+    JOIN weapons w ON w.code = cw.weapon_id
+    JOIN positions p ON p.id = cw.position_id
+    JOIN clusters cl ON cl.id = cw.cluster_id
+WHERE
+    cw.cluster_id = ANY ($1::int4[])
+ORDER BY
+    cw.cluster_id,
+    c.name_kr
+`
+
+type ListCwByClustersRow struct {
+	ClusterID    int32  `json:"cluster_id"`
+	ClusterLabel string `json:"cluster_label"`
+	CwID         int32  `json:"cw_id"`
+	ChID         int32  `json:"ch_id"`
+	ChName       string `json:"ch_name"`
+	ChImg        string `json:"ch_img"`
+	WCode        int32  `json:"w_code"`
+	WName        string `json:"w_name"`
+	WImg         string `json:"w_img"`
+	PosID        int32  `json:"pos_id"`
+	PosName      string `json:"pos_name"`
+}
+
+func (q *Queries) ListCwByClusters(ctx context.Context, ids []int32) ([]ListCwByClustersRow, error) {
+	rows, err := q.db.Query(ctx, listCwByClusters, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListCwByClustersRow
+	for rows.Next() {
+		var i ListCwByClustersRow
+		if err := rows.Scan(
+			&i.ClusterID,
+			&i.ClusterLabel,
+			&i.CwID,
+			&i.ChID,
+			&i.ChName,
+			&i.ChImg,
+			&i.WCode,
+			&i.WName,
+			&i.WImg,
+			&i.PosID,
+			&i.PosName,
 		); err != nil {
 			return nil, err
 		}

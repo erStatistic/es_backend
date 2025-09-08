@@ -303,6 +303,101 @@ func (cfg *Config) ListCwEntriesByCluster(w http.ResponseWriter, r *http.Request
 	respondWithJson(w, http.StatusOK, "CW entries by cluster retrieved", out)
 }
 
+func (cfg *Config) ListCwEntriesByClusters(w http.ResponseWriter, r *http.Request) {
+	cfg.Log.Info("ListCwEntriesByClusters")
+
+	ids, err := parseInt32List(r.URL.Query().Get("ids"))
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid ids", err)
+		return
+	}
+	if len(ids) == 0 {
+		respondWithJson(w, http.StatusOK, "empty", map[string]any{"data": []any{}})
+		return
+	}
+
+	rows, err := cfg.DB.ListCwByClusters(r.Context(), ids)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "DB error ListCwByClusters", err)
+		return
+	}
+
+	// sqlc가 만든 Row 타입 예: db.ListCwByClustersRow
+	type entry struct {
+		CwID      int32 `json:"cwId"`
+		Character struct {
+			ID       int32  `json:"id"`
+			Name     string `json:"name"`
+			ImageURL string `json:"imageUrl"`
+		} `json:"character"`
+		Weapon struct {
+			Code     *int32  `json:"code,omitempty"`
+			Name     *string `json:"name,omitempty"`
+			ImageURL *string `json:"imageUrl,omitempty"`
+		} `json:"weapon"`
+	}
+	type bucket struct {
+		ClusterID int32   `json:"clusterId"`
+		Label     string  `json:"label"`
+		Entries   []entry `json:"entries"`
+	}
+
+	byCID := make(map[int32]*bucket)
+	order := make([]int32, 0, len(ids))
+	seenOrder := make(map[int32]bool)
+
+	for _, r := range rows {
+		b := byCID[r.ClusterID]
+		if b == nil {
+			b = &bucket{
+				ClusterID: r.ClusterID,
+				Label:     r.ClusterLabel,
+				Entries:   make([]entry, 0, 32),
+			}
+			byCID[r.ClusterID] = b
+			if !seenOrder[r.ClusterID] {
+				order = append(order, r.ClusterID)
+				seenOrder[r.ClusterID] = true
+			}
+		}
+
+		b.Entries = append(b.Entries, entry{
+			CwID: r.CwID,
+			Character: struct {
+				ID       int32  `json:"id"`
+				Name     string `json:"name"`
+				ImageURL string `json:"imageUrl"`
+			}{
+				ID:       r.ChID,
+				Name:     r.ChName,
+				ImageURL: r.ChImg, // COALESCE로 non-null
+			},
+			Weapon: struct {
+				Code     *int32  `json:"code,omitempty"`
+				Name     *string `json:"name,omitempty"`
+				ImageURL *string `json:"imageUrl,omitempty"`
+			}{
+				Code:     &r.WCode,
+				Name:     &r.WName,
+				ImageURL: &r.WImg,
+			},
+		})
+	}
+
+	// 결과를 요청한 ids 순서로 정렬
+	out := make([]bucket, 0, len(byCID))
+	for _, id := range order {
+		if b, ok := byCID[id]; ok {
+			out = append(out, *b)
+		}
+	}
+
+	w.Header().Set("Cache-Control", "public, max-age=300")
+	respondWithJson(w, http.StatusOK, "CW entries by clusters retrieved", map[string]any{
+		"data": out,
+	})
+}
+
 type cwOverviewResp struct {
 	CwID      int32 `json:"cwId"`
 	Character *struct {
