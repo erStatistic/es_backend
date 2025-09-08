@@ -1347,7 +1347,7 @@ WITH
     weights AS (
         SELECT
             0.30::float8 AS w_wr, -- 승률 가중치
-            0.20::float8 AS w_mmr, -- 평균 MMR 가중치
+            0.20::float8 AS w_mmr, -- (획득) 평균 MMR 가중치
             0.50::float8 AS w_pr -- 픽률 가중치(↑)
     ),
     scope AS (
@@ -1365,11 +1365,15 @@ WITH
                 OR started_at < $2
             )
     ),
+    -- ▷ tiers는 team_avg_mmr로 필터링하고,
+    --    gained_mmr는 game_teams에서 끌어온다.
     scope_with_tier AS (
         SELECT
-            s.game_team_id, s.game_code, s.started_at, s.game_rank, s.total_time, s.team_avg_mmr, s.cw_ids, s.cluster_ids
+            s.game_team_id, s.game_code, s.started_at, s.game_rank, s.total_time, s.team_avg_mmr, s.cw_ids, s.cluster_ids,
+            gt.gained_mmr
         FROM
             scope s
+            JOIN game_teams gt ON gt.id = s.game_team_id
             LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
         WHERE
             (
@@ -1377,7 +1381,7 @@ WITH
                 OR t.name = $3
             )
     ),
-    denom AS ( -- 母수(전체 팀 수)
+    denom AS ( -- 母數(전체 팀 수)
         SELECT
             COUNT(*)::float8 AS total_teams
         FROM
@@ -1388,14 +1392,14 @@ WITH
             cw_ids AS comp_key,
             COUNT(*) AS team_count,
             SUM((game_rank = 1)::int) AS wins,
-            AVG(team_avg_mmr)::float8 AS avg_mmr,
+            AVG(gained_mmr)::float8 AS avg_mmr, -- ★ 평균 '획득' MMR
             AVG(total_time)::float8 AS avg_survival
         FROM
             scope_with_tier
         GROUP BY
             1
         HAVING
-            COUNT(*) >= COALESCE(NULLIF($4::int, 0), 30) -- minSamples
+            COUNT(*) >= COALESCE(NULLIF($4::int, 0), 30) -- minsamples
     ),
     base AS (
         SELECT
@@ -1412,7 +1416,8 @@ WITH
             team_hits h
             CROSS JOIN denom d
     ),
-    norm AS ( -- 0~1 정규화(상대 순위 기반)
+    -- 0~1 정규화(상대 순위 기반)
+    norm AS (
         SELECT
             b.comp_key, b.team_count, b.wins, b.avg_mmr, b.avg_survival, b.win_rate, b.pick_rate,
             CUME_DIST() OVER (
@@ -1422,7 +1427,7 @@ WITH
             CUME_DIST() OVER (
                 ORDER BY
                     b.avg_mmr
-            ) AS mmr_norm,
+            ) AS mmr_norm, -- 획득 MMR 기반
             CUME_DIST() OVER (
                 ORDER BY
                     b.pick_rate
@@ -1433,8 +1438,8 @@ WITH
     scored AS (
         SELECT
             n.comp_key, n.team_count, n.wins, n.avg_mmr, n.avg_survival, n.win_rate, n.pick_rate, n.wr, n.mmr_norm, n.pr_raw,
-            sqrt(n.pr_raw) AS pr, -- 인기 과대 영향 완화
-            (1.0 - exp(- (n.team_count::float8) / 200.0)) AS conf, -- 표본 신뢰도
+            SQRT(n.pr_raw) AS pr, -- 인기 과대 영향 완화
+            (1.0 - EXP(- (n.team_count::float8) / 200.0)) AS conf, -- 표본 신뢰도
             (
                 (
                     SELECT
@@ -1451,8 +1456,8 @@ WITH
                         w_pr
                     FROM
                         weights
-                ) * sqrt(n.pr_raw)
-            ) * (1.0 - exp(- (n.team_count::float8) / 200.0)) AS score
+                ) * SQRT(n.pr_raw)
+            ) * (1.0 - EXP(- (n.team_count::float8) / 200.0)) AS score
         FROM
             norm n
     )
@@ -1462,10 +1467,10 @@ SELECT
     s.wins,
     s.win_rate,
     s.pick_rate,
-    s.avg_mmr,
+    s.avg_mmr, -- ★ 평균 '획득' MMR
     s.avg_survival,
     s.score::float8 AS s_score,
-    -- 조합 멤버 상세(JSON 배열)
+    -- 조합 멤버 상세(json 배열)
     (
         SELECT
             json_agg(
