@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func (c *Client) GameByGameID(gameID string) ([]UserGame, error) {
+func (c *Client) GameByGameID(gameID int) ([]UserGame, error) {
 
-	url := baseURLv1 + "/games/" + gameID
+	url := fmt.Sprintf("%s/games/%d", baseURLv1, gameID)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -21,6 +21,10 @@ func (c *Client) GameByGameID(gameID string) ([]UserGame, error) {
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
+	}
+
+	if res.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP failed to get game by game ID: %d", res.StatusCode)
 	}
 
 	defer res.Body.Close()
@@ -42,7 +46,7 @@ func (c *Client) GameByGameID(gameID string) ([]UserGame, error) {
 	}
 
 	if result.Code != 200 {
-		fmt.Printf("StatusCode : %d\n", result.Code)
+		fmt.Printf("GameByGameID StatusCode : %d\n", result.Code)
 		return nil, err
 	}
 	return result.UserGames, nil

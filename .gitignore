@@ -31,4 +31,5 @@ go.work.sum
 # .idea/
 # .vscode/
 
-./internal/output/
+internal/output/*
+internal/statistics/*

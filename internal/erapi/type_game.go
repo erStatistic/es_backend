@@ -1,15 +1,8 @@
 package erapi
 
-type GameResponse struct {
-	Code      int        `json:"code"`
-	Message   string     `json:"message"`
-	UserGames []UserGame `json:"userGames"`
-	Next      int        `json:"next"`
-}
-
-type TotalGame struct {
-	UserGames []UserGame `json:"userGames"`
-}
+// type TotalGame struct {
+// 	UserGames []UserGame `json:"userGames"`
+// }
 
 type UserGame struct {
 	UserNum          int            `json:"userNum"`
@@ -78,6 +71,9 @@ type UserGame struct {
 	BonusExp                      int            `json:"bonusExp"`
 	StartDtm                      string         `json:"startDtm"`
 	Duration                      int            `json:"duration"`
+	MmrBefore                     int            `json:"mmrBefore"`
+	MmrGain                       int            `json:"mmrGain"`
+	MmrAfter                      int            `json:"mmrAfter"`
 	PlayTime                      int            `json:"playTime"`
 	WatchTime                     int            `json:"watchTime"`
 	TotalTime                     int            `json:"totalTime"`
@@ -207,6 +203,7 @@ type UserGame struct {
 		KillMutantChicken                   float64 `json:"KillMutantChicken"`
 		KillBear                            float64 `json:"KillBear"`
 		KillRaven                           float64 `json:"KillRaven"`
+		KillMutantRaven                     float64 `json:"KillMutantRaven"`
 		KillMutantBoar                      float64 `json:"KillMutantBoar"`
 		KillAssistDivideContribute          float64 `json:"KillAssistDivideContribute"`
 		KillMutantWolf                      float64 `json:"KillMutantWolf"`
@@ -318,6 +315,7 @@ type UserGame struct {
 	CrUseRootkit                            int              `json:"crUseRootkit"`
 	MmrGainInGame                           int              `json:"mmrGainInGame"`
 	MmrLossEntryCost                        int              `json:"mmrLossEntryCost"`
+	MmrAvg                                  int              `json:"mmrAvg"`
 	PremadeMatchingType                     int              `json:"premadeMatchingType"`
 	ViewContribution                        int              `json:"viewContribution"`
 	UseReconDrone                           int              `json:"useReconDrone"`

@@ -7,53 +7,161 @@ package database
 
 import (
 	"context"
-
-	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO
-    users (id, user_num, name)
+    users (nickname, user_num)
 VALUES
-    ($1, $2, $3)
+    ($1, $2)
 RETURNING
-	id, user_num, name
+    id, nickname, user_num, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID      uuid.UUID
-	UserNum int32
-	Name    string
+	Nickname string `json:"nickname"`
+	UserNum  int32  `json:"user_num"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.UserNum, arg.Name)
+	row := q.db.QueryRow(ctx, createUser, arg.Nickname, arg.UserNum)
 	var i User
-	err := row.Scan(&i.ID, &i.UserNum, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.Nickname,
+		&i.UserNum,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users
+WHERE
+    id = $1
 `
 
-func (q *Queries) DeleteUser(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, deleteUser)
+func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
 	return err
 }
 
 const getUser = `-- name: GetUser :one
 SELECT
-    id, user_num, name
+    id, nickname, user_num, created_at, updated_at
 FROM
     users
 WHERE
-    name = $1
+    id = $1
 `
 
-func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, name)
+func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, id)
 	var i User
-	err := row.Scan(&i.ID, &i.UserNum, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.Nickname,
+		&i.UserNum,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
+}
+
+const getUserByNickname = `-- name: GetUserByNickname :one
+SELECT
+    id, nickname, user_num, created_at, updated_at
+FROM
+    users
+WHERE
+    nickname = $1
+`
+
+func (q *Queries) GetUserByNickname(ctx context.Context, nickname string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByNickname, nickname)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Nickname,
+		&i.UserNum,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByUserNum = `-- name: GetUserByUserNum :one
+SELECT
+    id, nickname, user_num, created_at, updated_at
+FROM
+    users
+WHERE
+    user_num = $1
+`
+
+func (q *Queries) GetUserByUserNum(ctx context.Context, userNum int32) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByUserNum, userNum)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Nickname,
+		&i.UserNum,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listUsers = `-- name: ListUsers :many
+SELECT
+    id, nickname, user_num, created_at, updated_at
+FROM
+    users
+`
+
+func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Nickname,
+			&i.UserNum,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const patchUser = `-- name: PatchUser :exec
+UPDATE users
+SET
+    nickname = $1,
+    user_num = $2
+WHERE
+    id = $3
+`
+
+type PatchUserParams struct {
+	Nickname string `json:"nickname"`
+	UserNum  int32  `json:"user_num"`
+	ID       int32  `json:"id"`
+}
+
+func (q *Queries) PatchUser(ctx context.Context, arg PatchUserParams) error {
+	_, err := q.db.Exec(ctx, patchUser, arg.Nickname, arg.UserNum, arg.ID)
+	return err
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Client) UserByNickname(nickname string) (*User, error) {
-	url := baseURLv1 + "/user/nickname"
+	url := fmt.Sprintf("%s/user/nickname", baseURLv1)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -26,6 +26,10 @@ func (c *Client) UserByNickname(nickname string) (*User, error) {
 		return nil, err
 	}
 
+	if res.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP failed to get User By Nickname: %d", res.StatusCode)
+	}
+
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
@@ -41,7 +45,7 @@ func (c *Client) UserByNickname(nickname string) (*User, error) {
 	}
 
 	if result.Code != 200 {
-		fmt.Printf("StatusCode : %d\n", result.Code)
+		fmt.Printf("UserByNickname StatusCode : %d\n", result.Code)
 		return nil, err
 	}
 
