@@ -1,6 +1,143 @@
 -- name: RefreshMvTrioTeams :exec
 REFRESH MATERIALIZED VIEW CONCURRENTLY mv_trio_teams;
 
+-- name: GetCwTierByCwID :one
+WITH
+    scope AS (
+        SELECT
+            *
+        FROM
+            mv_trio_teams
+        WHERE
+            (
+                $1::timestamptz IS NULL
+                OR started_at >= $1
+            )
+            AND (
+                $2::timestamptz IS NULL
+                OR started_at < $2
+            )
+    ),
+    scope_with_tier AS (
+        SELECT
+            s.*,
+            gt.gained_mmr
+        FROM
+            scope s
+            JOIN game_teams gt ON gt.id = s.game_team_id
+            JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
+        WHERE
+            (
+                NULLIF($3, '') IS NULL
+                OR t.name = $3
+            )
+    ),
+    denom AS (
+        SELECT
+            COUNT(*)::float8 AS total_teams
+        FROM
+            scope_with_tier
+    ),
+    cw_hits AS (
+        SELECT
+            unnest(cw_ids) AS cw_id,
+            COUNT(*) AS team_count,
+            SUM((game_rank = 1)::int) AS wins,
+            AVG(gained_mmr)::float AS avg_mmr,
+            AVG(total_time)::float AS avg_survival
+        FROM
+            scope_with_tier
+        GROUP BY
+            1
+        HAVING
+            COUNT(*) >= COALESCE(NULLIF($4::int, 0), 50)
+    ),
+    -- 기존 지표 계산(변경 없음)
+    base AS (
+        SELECT
+            h.*,
+            COALESCE(
+                h.wins::float8 / NULLIF(h.team_count::float8, 0.0),
+                0.0
+            ) AS win_rate,
+            COALESCE(
+                h.team_count::float8 / NULLIF(d.total_teams, 0.0),
+                0.0
+            ) AS pick_rate
+        FROM
+            cw_hits h
+            CROSS JOIN denom d
+    ),
+    -- 정규화(0~1)만 해서 score 계산에 사용
+    norm AS (
+        SELECT
+            b.*,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.win_rate
+            ) AS wr,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.avg_mmr
+            ) AS mmr_norm,
+            CUME_DIST() OVER (
+                ORDER BY
+                    b.pick_rate
+            ) AS pr_raw
+        FROM
+            base b
+    ),
+    -- 최종 score (가중치/신뢰도 적용)
+    scored AS (
+        SELECT
+            n.*,
+            sqrt(n.pr_raw) AS pr, -- 인기 과대 영향 완화
+            (1.0 - exp(- (n.team_count::float8) / 200.0)) AS conf, -- 표본 신뢰도
+            (
+                0.50::float8 * n.wr + 0.30::float8 * n.mmr_norm + 0.20::float8 * sqrt(n.pr_raw)
+            ) * (1.0 - exp(- (n.team_count::float8) / 200.0)) AS score -- float8
+        FROM
+            norm n
+    ),
+    -- 퍼센타일 컷(티어 경계치): S p95, A p80, B p55, C p30
+    thresh AS (
+        SELECT
+            percentile_cont(0.95) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p95, -- S 하한
+            percentile_cont(0.80) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p80, -- A 하한
+            percentile_cont(0.55) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p55, -- B 하한
+            percentile_cont(0.30) WITHIN GROUP (
+                ORDER BY
+                    score
+            ) AS p30 -- C 하한
+        FROM
+            scored
+    )
+SELECT
+    CASE -- ✅ 티어 배정
+        WHEN s.score >= t.p95 THEN 'S' -- 상위 5%
+        WHEN s.score >= t.p80 THEN 'A' -- 80~95%
+        WHEN s.score >= t.p55 THEN 'B' -- 55~80%
+        WHEN s.score >= t.p30 THEN 'C' -- 30~55%
+        ELSE 'D' -- 30% 미만
+    END AS tier
+FROM
+    scored s
+    CROSS JOIN thresh t
+    JOIN character_weapons cw ON cw.id = s.cw_id
+    JOIN characters c ON c.id = cw.character_id
+    JOIN weapons w ON w.code = cw.weapon_id
+WHERE
+    cw.id = $5;
+
 -- name: GetCwStats :many
 WITH
     scope AS (
@@ -25,7 +162,7 @@ WITH
         FROM
             scope s
             JOIN game_teams gt ON gt.id = s.game_team_id
-            LEFT JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
+            JOIN tiers t ON s.team_avg_mmr <@ t.mmr_range
         WHERE
             (
                 NULLIF($3, '') IS NULL
@@ -305,8 +442,6 @@ ORDER BY
 LIMIT
     5;
 
--- 기존 정렬 유지(Top5 용에선 score DESC 별도 쿼리/파라미터로)
--- 기존 정렬 유지(Top5 용으로는 별도 쿼리에서 score DESC 사용)
 -- name: GetTopClusterCombos :many
 WITH
     scope AS (
