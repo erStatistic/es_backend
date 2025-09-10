@@ -133,8 +133,6 @@ FROM
     scored s
     CROSS JOIN thresh t
     JOIN character_weapons cw ON cw.id = s.cw_id
-    JOIN characters c ON c.id = cw.character_id
-    JOIN weapons w ON w.code = cw.weapon_id
 WHERE
     cw.id = $5;
 
