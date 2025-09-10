@@ -399,7 +399,8 @@ func (cfg *Config) ListCwEntriesByClusters(w http.ResponseWriter, r *http.Reques
 }
 
 type cwOverviewResp struct {
-	CwID      int32 `json:"cwId"`
+	CwID      int32  `json:"cwId"`
+	Tier      string `json:"tier"`
 	Character *struct {
 		ID       int32  `json:"id"`
 		Name     string `json:"name"`
@@ -477,10 +478,19 @@ func (cfg *Config) GetCwOverview(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "DB error GetCwStats", err)
 		return
 	}
+	tier, err := cfg.DB.GetCwTierByCwID(r.Context(), database.GetCwTierByCwIDParams{
+		ID: cwID,
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "DB error GetCwTierByCwID", err)
+		return
+	}
 
 	// 3) 응답 조립
 	out := cwOverviewResp{
 		CwID: cwID,
+		Tier: tier,
 	}
 
 	out.Character = &struct {
@@ -519,29 +529,29 @@ func (cfg *Config) GetCwOverview(w http.ResponseWriter, r *http.Request) {
 		Name: ident.ClusterName,
 	}
 
-	// summary 스텁(집계 테이블 생기면 교체)
-
 	summary, err := cfg.DB.GetOneCwStats(r.Context(), database.GetOneCwStatsParams{
 		ID: cwID,
 	})
+	fmt.Println(summary)
+
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "DB error GetOneCwStats", err)
-		return
+		out.Overview.Summary.Games = 0
+		out.Overview.Summary.WinRate = 0
+		out.Overview.Summary.PickRate = 0
+		out.Overview.Summary.MMRGain = 0
+		out.Overview.Summary.SurvivalSec = 0
+	} else {
+		out.Overview.Summary.Games = int(summary.Samples)
+		out.Overview.Summary.WinRate = summary.WinRate
+		out.Overview.Summary.PickRate = summary.PickRate
+		out.Overview.Summary.MMRGain = summary.AvgMmr
+		out.Overview.Summary.SurvivalSec = summary.AvgSurvival
 	}
-
-	out.Overview.Summary.Games = int(summary.Samples)
-	out.Overview.Summary.WinRate = summary.WinRate
-	out.Overview.Summary.PickRate = summary.PickRate
-	out.Overview.Summary.MMRGain = summary.AvgMmr
-	out.Overview.Summary.SurvivalSec = summary.AvgSurvival
-
-	// ✅ stats는 DB 값으로 채움 (0~5)
 	out.Overview.Stats.ATK = int(atk)
 	out.Overview.Stats.DEF = int(defv)
 	out.Overview.Stats.CC = int(cc)
 	out.Overview.Stats.SPD = int(spd)
 	out.Overview.Stats.SUP = int(sup)
-
 	// ✅ routes는 DB 값으로 채움
 	routes, err := cfg.DB.ListCWRoutes(r.Context(), database.ListCWRoutesParams{
 		CharacterID: ident.ChID,
@@ -556,7 +566,6 @@ func (cfg *Config) GetCwOverview(w http.ResponseWriter, r *http.Request) {
 		ID    int32  `json:"id"`
 		Title string `json:"title"`
 	}, len(routes))
-	fmt.Println(routes)
 	for i, route := range routes {
 		out.Overview.Routes[i].ID = route.RouteID
 		out.Overview.Routes[i].Title = route.Title
