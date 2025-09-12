@@ -143,10 +143,12 @@ func (cfg *Config) PatchCharacter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := cfg.DB.PatchCharacter(r.Context(), database.PatchCharacterParams{
+		ID:           character.ID,
 		ImageUrlMini: character.ImageUrlMini,
 		ImageUrlFull: character.ImageUrlFull,
 		NameKr:       character.NameKr,
 	})
+
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to patch character", err)
 		return

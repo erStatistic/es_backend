@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -81,7 +80,6 @@ func (cfg *Config) CreateTier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(params.MmrMin, params.MmrMax)
 	int4Range := makeInt4Range(params.MmrMin, params.MmrMax)
 
 	createdTier, err := cfg.DB.CreateTier(r.Context(), database.CreateTierParams{
@@ -125,8 +123,8 @@ func (cfg *Config) PatchTier(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		ImageUrl string `json:"imageUrl"`
 		Name     string `json:"name"`
-		MmrMin   int32  `json:"mmr_min"`
-		MmrMax   int32  `json:"mmr_max"`
+		MmrMin   *int32 `json:"mmr_min"`
+		MmrMax   *int32 `json:"mmr_max"`
 		Rank     int32  `json:"rank"`
 	}
 
@@ -142,8 +140,10 @@ func (cfg *Config) PatchTier(w http.ResponseWriter, r *http.Request) {
 	if params.Name != "" {
 		tier.Name = params.Name
 	}
-	mmrRange := makeInt4Range(&params.MmrMin, &params.MmrMax)
-	tier.MmrRange = mmrRange
+	mmrRange := makeInt4Range(params.MmrMin, params.MmrMax)
+	if params.MmrMin != nil && params.MmrMax != nil {
+		tier.MmrRange = mmrRange
+	}
 
 	err := cfg.DB.PatchTier(r.Context(), database.PatchTierParams{
 		ID:       tier.ID,

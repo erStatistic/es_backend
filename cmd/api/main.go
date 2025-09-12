@@ -18,7 +18,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool" // ✅ pgxpool
 )
 
-const port = "3333"
+const port = "8080"
 
 func main() {
 	_ = godotenv.Load()
